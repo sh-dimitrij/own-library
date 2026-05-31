@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тест: XML, DTD, XPath, XQuery</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: #2a3045;
+    --accent: #4fffb0;
+    --accent2: #ff6b6b;
+    --accent3: #6baaff;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --correct: #22c55e;
+    --wrong: #ef4444;
+    --pending: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(79,255,176,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,255,176,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    border: 1px solid var(--accent);
+    padding: 4px 12px;
+    border-radius: 2px;
+  }
+
+  .header h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(26px, 5vw, 42px);
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .header h1 span { color: var(--accent); }
+
+  .header p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* Progress Bar */
+  .progress-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,15,20,0.95);
+    backdrop-filter: blur(12px);
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* Section labels */
+  .section-label {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 48px 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Question card */
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    margin-bottom: 16px;
+    transition: border-color 0.3s;
+    animation: slideIn 0.3s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-card.answered-correct { border-color: var(--correct); }
+  .question-card.answered-wrong { border-color: var(--wrong); }
+
+  .question-num {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .question-text {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 20px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .question-text code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: left;
+    width: 100%;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .option:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(79,255,176,0.05);
+  }
+
+  .option .opt-letter {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0;
+    transition: all 0.2s;
+  }
+
+  .option:disabled { cursor: default; }
+
+  .option.selected-correct {
+    border-color: var(--correct);
+    background: rgba(34,197,94,0.08);
+  }
+  .option.selected-correct .opt-letter {
+    background: var(--correct);
+    border-color: var(--correct);
+    color: #000;
+  }
+
+  .option.selected-wrong {
+    border-color: var(--wrong);
+    background: rgba(239,68,68,0.08);
+  }
+  .option.selected-wrong .opt-letter {
+    background: var(--wrong);
+    border-color: var(--wrong);
+    color: #fff;
+  }
+
+  .option.reveal-correct {
+    border-color: var(--correct);
+    background: rgba(34,197,94,0.05);
+  }
+  .option.reveal-correct .opt-letter {
+    border-color: var(--correct);
+    color: var(--correct);
+  }
+
+  /* Explanation */
+  .explanation {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: rgba(107,170,255,0.07);
+    border-left: 3px solid var(--accent3);
+    border-radius: 4px;
+    font-size: 13px;
+    color: #a8c4ff;
+    line-height: 1.7;
+    display: none;
+  }
+
+  .explanation.show { display: block; animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Results */
+  .results {
+    display: none;
+    text-align: center;
+    padding: 60px 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-top: 40px;
+  }
+
+  .results.show { display: block; animation: slideIn 0.5s ease; }
+
+  .score-ring {
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 28px;
+    position: relative;
+  }
+
+  .score-ring svg {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+  }
+
+  .score-ring circle {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+  }
+
+  .score-ring .bg { stroke: var(--surface2); }
+  .score-ring .fg { stroke: var(--accent); transition: stroke-dashoffset 1s ease; }
+
+  .score-number {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .score-number span:first-child {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--accent);
+  }
+
+  .score-number span:last-child {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .results h2 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+
+  .results p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 24px;
+  }
+
+  .stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .stat-val.green { color: var(--correct); }
+  .stat-val.red { color: var(--wrong); }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .btn-retry {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 32px;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .btn-retry:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(79,255,176,0.25);
+  }
+
+  /* Floating score counter */
+  .floating-score {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 12px;
+    z-index: 200;
+    display: flex;
+    gap: 16px;
+  }
+
+  .fs-item { text-align: center; }
+  .fs-val { font-family: 'Unbounded', sans-serif; font-size: 18px; font-weight: 700; }
+  .fs-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+  .fs-val.g { color: var(--correct); }
+  .fs-val.r { color: var(--wrong); }
+
+  @media (max-width: 600px) {
+    .container { padding: 24px 16px 80px; }
+    .question-card { padding: 20px 16px; }
+    .floating-score { bottom: 16px; right: 16px; padding: 10px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="header-tag">// самопроверка</div>
+    <h1>XML · DTD · XPath · <span>XQuery</span></h1>
+    <p>50 вопросов по теме «Полуструктурированные данные»<br>Выбери ответ — сразу увидишь пояснение</p>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <span id="prog-text">0 / 50 отвечено</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+  </div>
+
+  <div id="quiz-container"></div>
+
+  <div class="results" id="results">
+    <div class="score-ring">
+      <svg viewBox="0 0 120 120">
+        <circle class="bg" cx="60" cy="60" r="52"/>
+        <circle class="fg" id="score-arc" cx="60" cy="60" r="52"
+          stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+      </svg>
+      <div class="score-number">
+        <span id="score-pct-text">0%</span>
+        <span>РЕЗУЛЬТАТ</span>
+      </div>
+    </div>
+    <h2 id="result-title">—</h2>
+    <p id="result-desc">—</p>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val green" id="res-correct">0</div><div class="stat-label">ВЕРНО</div></div>
+      <div class="stat"><div class="stat-val red" id="res-wrong">0</div><div class="stat-label">ОШИБОК</div></div>
+      <div class="stat"><div class="stat-val" id="res-skip" style="color:var(--muted)">0</div><div class="stat-label">ПРОПУЩЕНО</div></div>
+    </div>
+    <button class="btn-retry" onclick="retryQuiz()">↺ &nbsp;Пройти снова</button>
+  </div>
+</div>
+
+<div class="floating-score">
+  <div class="fs-item"><div class="fs-val g" id="fs-c">0</div><div class="fs-label">ВЕРНО</div></div>
+  <div class="fs-item"><div class="fs-val r" id="fs-w">0</div><div class="fs-label">ОШИБКИ</div></div>
+</div>
+
+<script>
+const questions = [
+  // ─── Полуструктурированные данные ───
+  {
+    section: "Полуструктурированные данные",
+    q: "Какое из следующих утверждений НЕ является характеристикой полуструктурированных данных?",
+    opts: ["Нет фиксированной схемы", "Данные хранят информацию о своей структуре", "Жёсткая схема, заданная заранее", "Схема может меняться со временем"],
+    ans: 2,
+    exp: "Жёсткая заранее заданная схема — это характеристика реляционных БД. Полуструктурированные данные, напротив, лишены фиксированной схемы."
+  },
+  {
+    section: "Полуструктурированные данные",
+    q: "Для чего используется модель полуструктурированных данных? (выберите наиболее полный ответ)",
+    opts: ["Только для ускорения запросов", "Интеграция БД с различными схемами и представление документов", "Только для хранения чисел и дат", "Замена реляционных БД во всех случаях"],
+    ans: 1,
+    exp: "Два основных назначения: средство интеграции БД с различными схемами и представление документов в инструментальных системах."
+  },
+  {
+    section: "Полуструктурированные данные",
+    q: "Какой тип вершины в графе П/С данных содержит атомарные значения (строки, числа)?",
+    opts: ["Корень", "Промежуточная вершина", "Лист", "Дуга"],
+    ans: 2,
+    exp: "Листья — это конечные вершины графа, содержащие атомарные значения: строки, числа. Например: 'Чапаев', '1934', '63'."
+  },
+  {
+    section: "Полуструктурированные данные",
+    q: "Граф полуструктурированных данных — это...",
+    opts: ["Обязательно дерево (каждая вершина имеет ровно одного родителя)", "Не дерево: дуги могут вести к одной вершине из разных мест", "Ориентированный граф без циклов и кратных дуг", "Двудольный граф"],
+    ans: 1,
+    exp: "Граф П/С данных — НЕ дерево. В нём дуги могут вести к одной и той же вершине из разных мест (например, один актёр связан с несколькими фильмами)."
+  },
+  {
+    section: "Полуструктурированные данные",
+    q: "Что является меткой дуги в графе полуструктурированных данных?",
+    opts: ["Числовой идентификатор вершины", "Тип объекта, название структуры или поля, связи объектов", "Цвет вершины", "Порядковый номер в базе данных"],
+    ans: 1,
+    exp: "Метки дуг задают: тип объекта/название структуры/название поля, а также связи между объектами. В XML эти метки становятся тегами."
+  },
+  {
+    section: "Полуструктурированные данные",
+    q: "Какое преимущество реляционных БД перед полуструктурированными данными?",
+    opts: ["Гибкость схемы", "Описание произвольных документов", "Эффективность хранения и обработки данных", "Работа с унаследованными данными"],
+    ans: 2,
+    exp: "Реляционные БД выигрывают по эффективности хранения и обработки данных. Зато П/С данные гибче и лучше подходят для документов и legacy-систем."
+  },
+  {
+    section: "Полуструктурированные данные",
+    q: "Что представляет собой корень графа П/С данных?",
+    opts: ["Один конкретный объект (например, один фильм)", "Вся база данных целиком", "Первая запись в таблице", "Атомарное значение наивысшего приоритета"],
+    ans: 1,
+    exp: "Корень — это вся БД целиком. От него ведут дуги ко всем типам объектов верхнего уровня (фильмы, актёры, студии)."
+  },
+
+  // ─── XML ───
+  {
+    section: "Язык XML",
+    q: "Что такое XML?",
+    opts: ["Язык программирования для серверных задач", "Расширяемый язык разметки, основанный на SGML", "Язык запросов к реляционным БД", "Формат двоичного хранения данных"],
+    ans: 1,
+    exp: "XML (Extensible Markup Language) — расширяемый язык разметки, основанный на языке SGML. Используется для представления данных в текстовом виде с помощью тегов."
+  },
+  {
+    section: "Язык XML",
+    q: "Как правильно записать пустой элемент в XML?",
+    opts: ["<empty></empty>", "<empty/>", "<EMPTY>", "empty{}"],
+    ans: 1,
+    exp: "Пустой элемент (без содержимого) записывается с самозакрывающимся тегом: <bestbook/> или <dt year='2000'/>."
+  },
+  {
+    section: "Язык XML",
+    q: "Сколько корневых элементов может быть в XML-документе?",
+    opts: ["Любое количество", "Не более двух", "Ровно один", "Ноль или один"],
+    ans: 2,
+    exp: "Корневой элемент обязателен и должен быть ровно один на весь документ. Он включает в себя все прочие элементы."
+  },
+  {
+    section: "Язык XML",
+    q: "Какой атрибут заголовка XML указывает кодировку документа?",
+    opts: ["version", "standalone", "encoding", "charset"],
+    ans: 2,
+    exp: "Атрибут encoding задаёт кодировку: <?xml version='1.0' encoding='UTF-8' ?>. Часто используют UTF-8 или Windows-1251."
+  },
+  {
+    section: "Язык XML",
+    q: "Что означает атрибут standalone='yes' в заголовке XML?",
+    opts: ["Документ имеет только один элемент", "Документ не требует внешних файлов (DTD)", "Документ написан на одном языке", "Версия XML — 1.0"],
+    ans: 1,
+    exp: "standalone='yes' означает самодостаточность: документ не требует дополнительных внешних файлов (например, внешнего DTD)."
+  },
+  {
+    section: "Язык XML",
+    q: "Как в XML записать знак «меньше» (<) внутри текстового содержимого?",
+    opts: ["\\<", "&lt;", "<lt>", "<!--<-->"],
+    ans: 1,
+    exp: "Для служебных символов используют спецкоды: &lt; = <, &gt; = >, &amp; = &, &quot; = кавычка."
+  },
+  {
+    section: "Язык XML",
+    q: "Что произойдёт, если в XML использовать теги <Film> и <film>?",
+    opts: ["Они будут считаться одинаковыми", "Они будут считаться разными тегами", "Документ станет невалидным", "Сработает предупреждение"],
+    ans: 1,
+    exp: "XML регистрозависим! <Film> и <film> — совершенно разные теги. Это важно помнить при составлении DTD и XPath-запросов."
+  },
+  {
+    section: "Язык XML",
+    q: "Как записать комментарий в XML?",
+    opts: ["// комментарий", "/* комментарий */", "<!-- комментарий -->", "# комментарий"],
+    ans: 2,
+    exp: "Комментарии в XML записываются так: <!-- это комментарий -->. Как и в HTML."
+  },
+  {
+    section: "Язык XML",
+    q: "Какой тип XML-документа соответствует определению схемы и задаёт допустимые теги?",
+    opts: ["Правильный (well-formed)", "Действительный (valid)", "Схематичный (schematic)", "Стандартный (standard)"],
+    ans: 1,
+    exp: "Действительный (valid) XML соответствует схеме (DTD или XSD), которая задаёт допустимые теги, атрибуты и вложенность. Правильный — лишь соответствует синтаксису XML."
+  },
+  {
+    section: "Язык XML",
+    q: "Как в XML кодируется связь между двумя объектами?",
+    opts: ["Через вложенные теги", "Через атрибуты типа ID и IDREF/IDREFS", "Через комментарии", "Через DOCTYPE"],
+    ans: 1,
+    exp: "Связи кодируются через атрибуты: объект получает уникальный ID, а связанный с ним объект содержит IDREF — ссылку на этот ID."
+  },
+  {
+    section: "Язык XML",
+    q: "В примере из лекции атрибут toact='a1 a2' означает...",
+    opts: ["Атрибут типа CDATA со значением 'a1 a2'", "Ссылку на два актёра через IDREFS", "Имя файла с актёрами", "Порядковый номер сцены"],
+    ans: 1,
+    exp: "toact='a1 a2' — атрибут типа IDREFS (ссылки на несколько объектов через пробел). Фильм ссылается на двух актёров с идентификаторами a1 и a2."
+  },
+  {
+    section: "Язык XML",
+    q: "Конструкция <![CDATA[ ... ]]> используется для...",
+    opts: ["Добавления CSS-стилей", "Отображения неформатированного текста с любыми символами", "Вставки скриптов", "Объявления типа документа"],
+    ans: 1,
+    exp: "CDATA-секция позволяет включить текст с любыми символами (включая < > &) без экранирования. Всё внутри [[CDATA[ ... ]]> воспринимается как обычный текст."
+  },
+
+  // ─── DTD ───
+  {
+    section: "DTD",
+    q: "DTD расшифровывается как...",
+    opts: ["Data Transfer Document", "Document Type Definition", "Dynamic Tag Descriptor", "Data Tree Design"],
+    ans: 1,
+    exp: "DTD — Document Type Definition, определение типа документа. Задаёт набор допустимых тегов, атрибутов и правила вложенности для XML."
+  },
+  {
+    section: "DTD",
+    q: "Что означает квантификатор * в DTD?",
+    opts: ["Ровно один раз", "Ноль или один раз", "Один или более раз", "Ноль или более раз"],
+    ans: 3,
+    exp: "Квантификаторы DTD: * — ноль или более, + — один или более, ? — ноль или один. Пример: <!ELEMENT db (film*, actor*, studio+)>"
+  },
+  {
+    section: "DTD",
+    q: "Что означает (el1, el2, el3) в описании содержимого элемента DTD?",
+    opts: ["Один из трёх элементов на выбор", "Строго последовательность: el1, затем el2, затем el3", "Набор необязательных полей", "Альтернатива: el1 или el2 или el3"],
+    ans: 1,
+    exp: "Запятая в DTD означает последовательность — элементы должны идти строго в указанном порядке. Вертикальная черта | означает выбор одного из вариантов."
+  },
+  {
+    section: "DTD",
+    q: "Тип #PCDATA в DTD означает...",
+    opts: ["Пустой элемент", "Только текстовое содержимое, без вложенных элементов", "Любое содержимое", "Последовательность дочерних элементов"],
+    ans: 1,
+    exp: "#PCDATA (Parsed Character Data) — элемент содержит только текст. Вложенные теги не допускаются. Пример: <!ELEMENT name (#PCDATA)>"
+  },
+  {
+    section: "DTD",
+    q: "Тип атрибута ID в DTD означает...",
+    opts: ["Целочисленный идентификатор", "Уникальное строковое значение в пределах документа", "Ссылку на внешний файл", "Текстовое значение"],
+    ans: 1,
+    exp: "ID — уникальный идентификатор. Значение атрибута типа ID должно быть уникальным в пределах всего документа. IDREF — ссылка на такой ID."
+  },
+  {
+    section: "DTD",
+    q: "Чем отличается IDREF от IDREFS?",
+    opts: ["IDREF — ссылка на один объект, IDREFS — ссылки на несколько через пробел", "IDREF — числовой, IDREFS — строковый", "IDREF устарел, IDREFS — современная версия", "Разницы нет"],
+    ans: 0,
+    exp: "IDREF — ссылка на один идентификатор (tos='s1'). IDREFS — ссылки на несколько идентификаторов, перечисленных через пробел (toact='a1 a2')."
+  },
+  {
+    section: "DTD",
+    q: "Параметр #REQUIRED в описании атрибута означает...",
+    opts: ["Атрибут необязателен", "Атрибут имеет фиксированное значение", "Атрибут обязателен", "Атрибут может быть пустым"],
+    ans: 2,
+    exp: "Параметры: #REQUIRED — обязателен, #IMPLIED — необязателен, #FIXED 'значение' — всегда имеет указанное значение."
+  },
+  {
+    section: "DTD",
+    q: "Как подключить внешний DTD к XML-документу?",
+    opts: ['<?include dtd="root.dtd"?>', '<!DOCTYPE root SYSTEM "root.dtd">', '<dtd src="root.dtd"/>', '<!--DTD: root.dtd-->'],
+    ans: 1,
+    exp: 'Внешний DTD подключается через: <!DOCTYPE root SYSTEM "root.dtd">. При этом в заголовке XML указывают standalone="no".'
+  },
+  {
+    section: "DTD",
+    q: "Что справедливо при одновременном использовании внутреннего и внешнего DTD?",
+    opts: ["Внешний имеет приоритет", "Оба равноправны", "Внутренний имеет приоритет", "Использовать оба запрещено"],
+    ans: 2,
+    exp: "При совместном использовании внутренний DTD доминирует над внешним. Внутренний DTD расположен прямо в XML-документе в блоке <!DOCTYPE root [ ... ]>."
+  },
+  {
+    section: "DTD",
+    q: "Какое главное преимущество XML-схем (XSD) перед DTD?",
+    opts: ["XSD проще для ручного написания", "XSD поддерживает стандартные типы данных (int, bool, date) и ограничения на значения", "XSD занимает меньше места", "XSD быстрее обрабатывается браузером"],
+    ans: 1,
+    exp: "XSD поддерживает типы данных (int, bool, string, date), ограничения (год >= 1500), пространства имён. Но XSD более громоздкий и лучше подходит для автоматической обработки."
+  },
+  {
+    section: "DTD",
+    q: "Что описывает конструкция <!ELEMENT E (#PCDATA | (street*, city*))>?",
+    opts: ["E содержит либо текст, либо ноль+ элементов street и city", "E содержит только текст", "E пустой", "E содержит строго один street и один city"],
+    ans: 0,
+    exp: "| означает выбор. Элемент E содержит ЛИБО текст (#PCDATA), ЛИБО последовательность из нуля и более street и нуля и более city."
+  },
+
+  // ─── XPath ───
+  {
+    section: "XPath",
+    q: "Для чего предназначен язык XPath?",
+    opts: ["Для создания новых XML-документов", "Для навигации по XML и извлечения узлов по условию", "Для преобразования XML в HTML", "Для валидации XML по схеме"],
+    ans: 1,
+    exp: "XPath (XML Path Language) — язык навигации по XML-документу. Позволяет указать путь к элементу, задать условие выборки и извлечь нужное значение."
+  },
+  {
+    section: "XPath",
+    q: "Что такое DOM применительно к XML?",
+    opts: ["Язык разметки документов", "Дерево, где узлами являются элементы, атрибуты и текст", "Схема валидации XML", "Тип базы данных"],
+    ans: 1,
+    exp: "DOM (Document Object Model) — дерево XML-документа. Элементы, атрибуты, текст, комментарии — все являются узлами. XPath перемещается по этому дереву."
+  },
+  {
+    section: "XPath",
+    q: "Что вернёт запрос XPath: <code>//film/name</code>?",
+    opts: ["Все элементы film", "Элементы name, вложенные в film", "Атрибуты name элементов film", "Только первый элемент name"],
+    ans: 1,
+    exp: "//film/name — найти все элементы film в любом месте документа, и у каждого взять дочерний элемент name. Вернёт элементы name вместе с тегами."
+  },
+  {
+    section: "XPath",
+    q: "Что означает сокращение <code>//</code> в XPath?",
+    opts: ["Комментарий", "Ось descendant — потомки любой глубины", "Переход к корню документа", "Ось parent — родитель"],
+    ans: 1,
+    exp: "// — сокращение оси descendant-or-self. //film означает 'найти все элементы film на любой глубине вложенности'."
+  },
+  {
+    section: "XPath",
+    q: "Что вернёт запрос <code>//name/text()</code>?",
+    opts: ["Элементы name с тегами", "Текстовое содержимое элементов name без тегов", "Количество элементов name", "Атрибуты элементов name"],
+    ans: 1,
+    exp: "text() возвращает текстовый узел — содержимое без тегов. Запрос вернёт строки 'Чапаев' и 'Ленфильм' (из <name> элементов film и studio)."
+  },
+  {
+    section: "XPath",
+    q: "Как записать обращение к атрибуту idf в XPath?",
+    opts: ["idf", ".idf", "@idf", "#idf"],
+    ans: 2,
+    exp: "@ — сокращение для оси attribute. @idf означает attribute::idf. Например: //film/@idf вернёт значения атрибута idf всех элементов film."
+  },
+  {
+    section: "XPath",
+    q: "Что вернёт запрос <code>//film[1]</code>?",
+    opts: ["Все фильмы", "Первый элемент film", "Фильм с атрибутом 1", "Последний фильм"],
+    ans: 1,
+    exp: "Числовой предикат [n] выбирает n-й элемент по порядку. //film[1] — первый film, //film[last()] — последний."
+  },
+  {
+    section: "XPath",
+    q: "Что означает предикат <code>//film[@idf]</code>?",
+    opts: ["Фильмы с атрибутом idf равным true", "Все фильмы, имеющие атрибут idf (независимо от значения)", "Фильмы без атрибута idf", "Фильмы с пустым атрибутом idf"],
+    ans: 1,
+    exp: "[@имя] проверяет наличие атрибута, не его значение. //film[@idf] вернёт все film, у которых есть атрибут idf."
+  },
+  {
+    section: "XPath",
+    q: "Что делает функция <code>count()</code> в XPath?",
+    opts: ["Считает символы в строке", "Возвращает количество узлов в наборе", "Возвращает числовое значение атрибута", "Суммирует числовые значения"],
+    ans: 1,
+    exp: "count() возвращает количество узлов в наборе. Пример: //actor[count(edu) > 3] — актёры с более чем тремя элементами edu."
+  },
+  {
+    section: "XPath",
+    q: "Запрос <code>//actor | //studio</code> вернёт...",
+    opts: ["Элементы actor внутри studio", "Объединение: все actor и все studio", "Пересечение множеств", "Ошибку: оператор | не поддерживается"],
+    ans: 1,
+    exp: "| — оператор объединения путей в XPath. //actor | //studio вернёт все элементы actor и все элементы studio вместе."
+  },
+  {
+    section: "XPath",
+    q: "Что означает ось <code>ancestor</code> в XPath?",
+    opts: ["Все потомки текущего узла", "Все предки (вышестоящие по иерархии) текущего узла", "Соседние элементы на том же уровне", "Атрибуты текущего элемента"],
+    ans: 1,
+    exp: "ancestor — предки (все узлы выше текущего по иерархии). Противоположность — descendant (потомки). Сокращения: .. = parent, // = descendant."
+  },
+  {
+    section: "XPath",
+    q: "Запрос <code>//studio[@ids = //film[year>2012]/@tos]/name</code> возвращает...",
+    opts: ["Все названия студий", "Названия студий, снявших фильмы после 2012 года", "Годы фильмов после 2012", "Идентификаторы студий"],
+    ans: 1,
+    exp: "Запрос соединяет studio и film по ключу: берёт студию, чей @ids совпадает с @tos фильма с годом > 2012. Возвращает имена таких студий — это join в XPath."
+  },
+  {
+    section: "XPath",
+    q: "Что вернёт <code>//*</code>?",
+    opts: ["Только корневой элемент", "Все элементы документа", "Все атрибуты документа", "Только листовые узлы"],
+    ans: 1,
+    exp: "//* — выбрать все элементы в любом месте документа. * означает 'любое имя'. //*/@* — все атрибуты всех элементов."
+  },
+  {
+    section: "XPath",
+    q: "Функция <code>contains(str, sub)</code> в XPath...",
+    opts: ["Возвращает длину строки", "Проверяет, входит ли подстрока sub в строку str", "Заменяет подстроку", "Разбивает строку на части"],
+    ans: 1,
+    exp: "contains(исходная_строка, подстрока) — возвращает true, если подстрока входит в исходную строку. Используется в предикатах для поиска по содержимому."
+  },
+
+  // ─── XQuery ───
+  {
+    section: "XQuery",
+    q: "XQuery — это...",
+    opts: ["Только альтернативное название XPath", "Язык запросов к XML, включающий XPath 2.0 и дополнительные конструкции", "Язык описания схем XML", "Диалект SQL для XML"],
+    ans: 1,
+    exp: "XQuery — полноценный язык запросов к XML. Он включает XPath 2.0 и добавляет: циклы, переменные, условия, сортировку, генерацию новых элементов, функции."
+  },
+  {
+    section: "XQuery",
+    q: "Что означает аббревиатура FLWOR?",
+    opts: ["Find, Load, Write, Output, Return", "For, Let, Where, Order by, Return", "Filter, Link, Work, Order, Result", "Fetch, Loop, Where, Order, Run"],
+    ans: 1,
+    exp: "FLWOR: For (цикл), Let (присваивание), Where (условие), Order by (сортировка), Return (возврат). Основные конструкции языка XQuery."
+  },
+  {
+    section: "XQuery",
+    q: "Как записать переменную в XQuery?",
+    opts: ["var x = 10", "$x", "@x", "let x"],
+    ans: 1,
+    exp: "Переменные в XQuery записываются со знаком $: let $a = 10. Для подстановки значения в выражение используют фигурные скобки: {$a + $b}."
+  },
+  {
+    section: "XQuery",
+    q: "Что делает функция <code>document('a.xml')</code> в XQuery?",
+    opts: ["Создаёт новый XML-файл", "Загружает XML-файл и возвращает корневой узел", "Удаляет файл", "Валидирует файл по DTD"],
+    ans: 1,
+    exp: "document() загружает XML-документ из файла и возвращает его как корневой узел. К результату можно применять XPath: document('a.xml')/db/actor."
+  },
+  {
+    section: "XQuery",
+    q: "Что вернёт запрос: <code>for $x in (2,3) return $x + 1</code>?",
+    opts: ["Последовательность (3, 4)", "Последовательность (2, 3)", "Число 6", "Ошибку"],
+    ans: 0,
+    exp: "for итерирует по последовательности (2, 3). На каждой итерации return $x + 1: 2+1=3, 3+1=4. Результат: последовательность (3, 4)."
+  },
+  {
+    section: "XQuery",
+    q: "Вложенные циклы: <code>for $x in (2,3), $y in (5,10) return {$x*$y}</code> вернут...",
+    opts: ["(10, 20)", "(10, 20, 15, 30)", "(7, 12, 13)", "Ошибку"],
+    ans: 1,
+    exp: "Декартово произведение: x=2,y=5→10; x=2,y=10→20; x=3,y=5→15; x=3,y=10→30. Результат: (10, 20, 15, 30)."
+  },
+  {
+    section: "XQuery",
+    q: "Конструкция <code>element A { attribute id {1}, element B {1234} }</code> создаст...",
+    opts: ['<A id="1"><B>1234</B></A>', '<element name="A"/>', '<id>1</id><B>1234</B>', "Ошибку: нельзя генерировать элементы"],
+    ans: 0,
+    exp: "Конструктор элементов XQuery позволяет генерировать XML на лету. Результат: <A id='1'><B>1234</B></A>."
+  },
+  {
+    section: "XQuery",
+    q: "Ключевое слово <code>order by</code> в XQuery используется для...",
+    opts: ["Определения порядка атрибутов", "Сортировки результатов запроса", "Установки приоритета условий where", "Нумерации элементов"],
+    ans: 1,
+    exp: "order by — сортировка результатов, аналог ORDER BY в SQL. Пример: order by $a/fio — сортировать по ФИО актёра."
+  },
+  {
+    section: "XQuery",
+    q: "Функция <code>declare function</code> в XQuery используется для...",
+    opts: ["Объявления пространства имён", "Объявления пользовательской функции", "Объявления переменной типа", "Загрузки внешнего документа"],
+    ans: 1,
+    exp: "declare function позволяет объявить пользовательскую функцию с параметрами и возвращаемым типом. Пример из лекции: declare function fun($var as xs:integer) as element(actor)*."
+  },
+  {
+    section: "XQuery",
+    q: "Что такое «последовательность» в XQuery?",
+    opts: ["Список таблиц БД", "Упорядоченный набор узлов или атомарных значений", "Тип числовых данных", "Структура для хранения ключей"],
+    ans: 1,
+    exp: "Последовательность — базовый тип XQuery: упорядоченный набор объектов (узлов или атомарных значений). Примеры: (1, 2, 3), (1 to 3), () — пустая."
+  },
+  {
+    section: "XQuery",
+    q: "Что делает оператор <code>is</code> при сравнении двух переменных-узлов в XQuery?",
+    opts: ["Сравнивает их текстовые значения", "Проверяет, являются ли они одним и тем же узлом документа", "Проверяет совпадение имён тегов", "Сравнивает количество дочерних элементов"],
+    ans: 1,
+    exp: "$n1 is $n2 проверяет идентичность узлов — являются ли $n1 и $n2 одним и тем же узлом в дереве документа (не просто одинаковыми значениями)."
+  }
+];
+
+let answered = 0;
+let correct = 0;
+let wrong = 0;
+
+function buildQuiz() {
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = '';
+
+  let currentSection = '';
+  let delay = 0;
+
+  questions.forEach((q, i) => {
+    if (q.section !== currentSection) {
+      currentSection = q.section;
+      const label = document.createElement('div');
+      label.className = 'section-label';
+      label.textContent = q.section;
+      container.appendChild(label);
+    }
+
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = `q${i}`;
+    card.style.animationDelay = `${delay}ms`;
+    delay = Math.min(delay + 30, 400);
+
+    const letters = ['А', 'Б', 'В', 'Г'];
+
+    const qText = q.q.replace(/<code>(.*?)<\/code>/g, '<code>$1</code>');
+
+    card.innerHTML = `
+      <div class="question-num">// вопрос ${String(i+1).padStart(2,'0')} из 50</div>
+      <div class="question-text">${qText}</div>
+      <div class="options" id="opts${i}">
+        ${q.opts.map((opt, oi) => `
+          <button class="option" onclick="answer(${i}, ${oi})" id="opt${i}_${oi}">
+            <span class="opt-letter">${letters[oi]}</span>
+            <span>${opt}</span>
+          </button>
+        `).join('')}
+      </div>
+      <div class="explanation" id="exp${i}">${q.exp}</div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function answer(qIdx, optIdx) {
+  const q = questions[qIdx];
+  const card = document.getElementById(`q${qIdx}`);
+  const exp = document.getElementById(`exp${qIdx}`);
+
+  // Disable all options
+  for (let i = 0; i < q.opts.length; i++) {
+    const btn = document.getElementById(`opt${qIdx}_${i}`);
+    btn.disabled = true;
+    if (i === q.ans) btn.classList.add('reveal-correct');
+  }
+
+  const chosen = document.getElementById(`opt${qIdx}_${optIdx}`);
+
+  if (optIdx === q.ans) {
+    chosen.classList.add('selected-correct');
+    card.classList.add('answered-correct');
+    correct++;
+    document.getElementById('fs-c').textContent = correct;
+  } else {
+    chosen.classList.add('selected-wrong');
+    card.classList.add('answered-wrong');
+    wrong++;
+    document.getElementById('fs-w').textContent = wrong;
+  }
+
+  exp.classList.add('show');
+  answered++;
+
+  // Update progress
+  const pct = Math.round(answered / 50 * 100);
+  document.getElementById('prog-text').textContent = `${answered} / 50 отвечено`;
+  document.getElementById('prog-pct').textContent = `${pct}%`;
+  document.getElementById('prog-fill').style.width = pct + '%';
+
+  if (answered === 50) {
+    setTimeout(showResults, 600);
+  }
+}
+
+function showResults() {
+  const pct = Math.round(correct / 50 * 100);
+  const skipped = 50 - answered;
+
+  document.getElementById('res-correct').textContent = correct;
+  document.getElementById('res-wrong').textContent = wrong;
+  document.getElementById('res-skip').textContent = skipped;
+  document.getElementById('score-pct-text').textContent = pct + '%';
+
+  const circumference = 326.7;
+  const offset = circumference - (pct / 100) * circumference;
+  setTimeout(() => {
+    document.getElementById('score-arc').style.strokeDashoffset = offset;
+  }, 200);
+
+  let title, desc;
+  if (pct >= 90) { title = "Отлично! 🏆"; desc = "Превосходный результат. Тема освоена на высоком уровне."; }
+  else if (pct >= 75) { title = "Хорошо! 👍"; desc = "Крепкие знания. Повтори вопросы, на которых ошибся."; }
+  else if (pct >= 55) { title = "Неплохо"; desc = "Есть пробелы. Пересмотри шпаргалку и попробуй снова."; }
+  else { title = "Нужно повторить"; desc = "Вернись к материалу лекции и шпаргалке, затем попробуй снова."; }
+
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-desc').textContent = desc;
+
+  const results = document.getElementById('results');
+  results.classList.add('show');
+  results.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function retryQuiz() {
+  answered = 0; correct = 0; wrong = 0;
+  document.getElementById('fs-c').textContent = 0;
+  document.getElementById('fs-w').textContent = 0;
+  document.getElementById('prog-text').textContent = '0 / 50 отвечено';
+  document.getElementById('prog-pct').textContent = '0%';
+  document.getElementById('prog-fill').style.width = '0%';
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('score-arc').style.strokeDashoffset = '326.7';
+  buildQuiz();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+buildQuiz();
+</script>
+</body>
+</html>

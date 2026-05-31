@@ -1,0 +1,253 @@
+
+<h2 class="sr-only">Тест по теме «Объектная модель данных и язык OQL» — 50 вопросов с вариантами ответов</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+#app{padding:1rem 0}
+.header{margin-bottom:1.5rem}
+.header h1{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+.header p{font-size:14px;color:var(--color-text-secondary)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.75rem 1rem;text-align:center}
+.stat-val{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.stat-lbl{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.stat-val.green{color:var(--color-text-success)}
+.stat-val.red{color:var(--color-text-danger)}
+.stat-val.amber{color:var(--color-text-warning)}
+.progress-bar{height:6px;background:var(--color-background-secondary);border-radius:3px;margin-bottom:1.5rem;overflow:hidden}
+.progress-fill{height:100%;background:var(--color-text-info);border-radius:3px;transition:width .3s}
+.q-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem}
+.q-num{font-size:12px;color:var(--color-text-tertiary);margin-bottom:.5rem}
+.q-text{font-size:15px;color:var(--color-text-primary);line-height:1.5;margin-bottom:1rem}
+.q-text code{font-family:var(--font-mono);font-size:13px;background:var(--color-background-secondary);padding:1px 5px;border-radius:4px}
+.options{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:flex-start;gap:10px;padding:.65rem .9rem;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);cursor:pointer;transition:background .15s,border-color .15s;font-size:14px;color:var(--color-text-primary);line-height:1.4;text-align:left;background:transparent;width:100%}
+.opt:hover:not(.locked){background:var(--color-background-secondary);border-color:var(--color-border-secondary)}
+.opt.selected{border-color:var(--color-border-info);background:var(--color-background-info)}
+.opt.correct{border-color:var(--color-border-success);background:var(--color-background-success)}
+.opt.wrong{border-color:var(--color-border-danger);background:var(--color-background-danger)}
+.opt.show-correct{border-color:var(--color-border-success);background:var(--color-background-success)}
+.opt-marker{width:20px;height:20px;border-radius:50%;border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:500;margin-top:1px;color:var(--color-text-secondary)}
+.opt.selected .opt-marker{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+.opt.correct .opt-marker,.opt.show-correct .opt-marker{background:var(--color-background-success);border-color:var(--color-border-success);color:var(--color-text-success)}
+.opt.wrong .opt-marker{background:var(--color-background-danger);border-color:var(--color-border-danger);color:var(--color-text-danger)}
+.explanation{margin-top:.75rem;padding:.65rem .9rem;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:13px;color:var(--color-text-secondary);line-height:1.5;display:none}
+.explanation.show{display:block}
+.actions{display:flex;gap:10px;margin-top:1.5rem}
+.btn{padding:.6rem 1.25rem;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;cursor:pointer;font-size:14px;color:var(--color-text-primary)}
+.btn:hover{background:var(--color-background-secondary)}
+.btn.primary{background:var(--color-text-info);color:#fff;border-color:transparent}
+.btn.primary:hover{opacity:.9}
+.section-label{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin:1.5rem 0 .75rem;padding-bottom:.4rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.result-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:2rem;text-align:center;display:none}
+.result-panel.show{display:block}
+.result-score{font-size:48px;font-weight:500;margin-bottom:.5rem}
+.result-msg{font-size:16px;color:var(--color-text-secondary);margin-bottom:1.5rem}
+.filter-bar{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.filter-btn{padding:.4rem .9rem;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;cursor:pointer;font-size:13px;color:var(--color-text-secondary)}
+.filter-btn.active{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+</style>
+
+<div id="app">
+<div class="header">
+  <h1>Тест: Объектная модель данных и OQL</h1>
+  <p>50 вопросов · нажми на вариант, чтобы проверить ответ</p>
+</div>
+<div class="stats">
+  <div class="stat"><div class="stat-val" id="s-total">50</div><div class="stat-lbl">Всего</div></div>
+  <div class="stat"><div class="stat-val green" id="s-correct">0</div><div class="stat-lbl">Верно</div></div>
+  <div class="stat"><div class="stat-val red" id="s-wrong">0</div><div class="stat-lbl">Неверно</div></div>
+  <div class="stat"><div class="stat-val amber" id="s-pct">0%</div><div class="stat-lbl">Результат</div></div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="setFilter('all')">Все</button>
+  <button class="filter-btn" onclick="setFilter('unanswered')">Не отвечено</button>
+  <button class="filter-btn" onclick="setFilter('wrong')">Ошибки</button>
+  <button class="filter-btn" onclick="setFilter('correct')">Верные</button>
+</div>
+<div id="quiz-list"></div>
+<div class="actions">
+  <button class="btn" onclick="resetAll()">Сбросить все ответы</button>
+  <button class="btn primary" onclick="showResults()">Показать итог ↗</button>
+</div>
+<div class="result-panel" id="result-panel">
+  <div class="result-score" id="r-score"></div>
+  <div class="result-msg" id="r-msg"></div>
+  <button class="btn primary" onclick="resetAll();document.getElementById('result-panel').classList.remove('show')">Пройти заново</button>
+</div>
+</div>
+
+<script>
+const QUESTIONS=[
+{s:"Стандарт ODMG",q:"В каком году был создан консорциум ODMG?",opts:["1989","1991","2001","2003"],a:1,e:"ODMG (Object Database Management Group) был основан в 1991 году. В 1989 году был создан консорциум OMG."},
+{s:"Стандарт ODMG",q:"Какой язык стандарта ODMG отвечает за описание структуры данных (аналог DDL в SQL)?",opts:["OQL","OML","ODL","OMG"],a:2,e:"ODL (Object Definition Language) — язык определения данных, аналог DDL. OQL — язык запросов, OML — язык манипулирования объектами."},
+{s:"Стандарт ODMG",q:"Какой язык стандарта ODMG не включает команды добавления, изменения и удаления данных?",opts:["ODL","OML","OQL","Все три включают"],a:2,e:"OQL включает только SELECT для выборки. INSERT, UPDATE, DELETE реализуются через OML (язык манипулирования объектами)."},
+{s:"Стандарт ODMG",q:"Какая компания создала известную объектную СУБД Cache` с полной объектной моделью?",opts:["Oracle","Intersystems","IBM","Microsoft"],a:1,e:"Cache` разработана компанией Intersystems и поддерживает полную объектную модель, включая методы, как одно из представлений данных."},
+{s:"Стандарт ODMG",q:"После 2001 года поддержкой стандарта ODMG занимается:",opts:["ODMG","ISO","OMG","W3C"],a:2,e:"После 2001 года стандартами объектных баз данных занимается консорциум OMG (Object Management Group)."},
+{s:"Объектная модель",q:"Что такое OID в объектной базе данных?",opts:["Имя класса, заданное пользователем","Уникальный идентификатор объекта, создаваемый системой автоматически","Ключ, объявленный в описании класса","Тип атрибута"],a:1,e:"OID (Object Identifier) — уникальный идентификатор объекта, который создаётся и поддерживается системой автоматически. Он скрыт от пользователя."},
+{s:"Объектная модель",q:"Если для класса явно объявлен ключ (key), создаётся ли при этом OID?",opts:["Нет, OID заменяется ключом","Да, OID создаётся всегда, даже если объявлен ключ","Зависит от реализации СУБД","Только если ключ составной"],a:1,e:"OID создаётся всегда автоматически, независимо от наличия явно объявленных ключей. Ключ — это дополнительный способ идентификации."},
+{s:"Объектная модель",q:"Чем литерал отличается от объекта в объектной модели?",opts:["Литерал имеет OID, объект — нет","Литерал — константа, не может изменять значение; объект может изменяться","Литерал хранится в БД, объект — нет","Литерал не имеет типа"],a:1,e:"Литерал — это константа (например, {\"Hello\", {1,2,3}}), которая не может изменять значение. Объект характеризуется OID и может изменяться."},
+{s:"Объектная модель",q:"Что такое экстент класса?",opts:["Список атрибутов класса","Множество всех объектов данного класса в базе данных","Набор методов класса","Иерархия классов"],a:1,e:"Экстент (extent) — это множество объектов данного класса, существующих в базе данных в текущий момент. Аналог таблицы в реляционной модели."},
+{s:"Объектная модель",q:"Если класс A является подклассом класса B, как соотносятся их экстенты?",opts:["Экстент A совпадает с экстентом B","Экстент A является подмножеством экстента B","Экстент B является подмножеством экстента A","Экстенты не пересекаются"],a:1,e:"Если A — производный от B, то объект A также является объектом B. Поэтому экстент A — подмножество экстента B."},
+{s:"Объектная модель",q:"Чем интерфейс (interface) отличается от класса (class) в объектной модели?",opts:["Интерфейс может содержать методы, класс — нет","На основе интерфейса нельзя создавать объекты; у него нет экстента и ключей","Класс не поддерживает наследование","Разницы нет"],a:1,e:"Интерфейс — абстрактный объектный тип. Нельзя создавать объекты интерфейса. У него нет экстента и ключей. Используется для формирования иерархии."},
+{s:"Объектная модель",q:"Какие виды бинарных связей поддерживает объектная модель?",opts:["Только 1-1","1-1 и 1-М","1-1, 1-М и М-М","Только М-М"],a:2,e:"Объектная модель поддерживает бинарные связи трёх видов: 1-1, 1-М и М-М."},
+{s:"Объектная модель",q:"Как реализуется N-арная связь (N>2) в объектной модели?",opts:["Напрямую через ключевое слово relationship","Создаётся отдельный класс со ссылками на все участвующие классы","N-арные связи не поддерживаются","Через наследование"],a:1,e:"Для N-арной связи создают отдельный класс-посредник, который содержит ссылки (связи) на каждый из N участвующих классов."},
+{s:"Объектная модель",q:"Какой из перечисленных принципов ООП НЕ упоминается как поддерживаемый объектной моделью?",opts:["Инкапсуляция","Наследование","Полиморфизм","Параллелизм"],a:3,e:"Объектная модель поддерживает инкапсуляцию, наследование и полиморфизм. Параллелизм — не относится к базовым принципам объектной модели данных."},
+{s:"Объектная модель",q:"Как называется наследование от интерфейса в терминологии ODMG?",opts:["extends","IS-A","implements","mixin"],a:1,e:"Механизм наследования от интерфейсов называется IS-A. Наследование от классов называется extends (расширение)."},
+{s:"Типы данных ODL",q:"Какой тип коллекции в ODL допускает дублирующиеся элементы и не упорядочен?",opts:["Set<T>","Bag<T>","List<T>","Array<T,N>"],a:1,e:"Bag<T> — мультимножество: неупорядоченное, дубликаты разрешены. Set<T> — уникальные элементы, List<T> — упорядочен."},
+{s:"Типы данных ODL",q:"Чем Set<T> отличается от Bag<T>?",opts:["Set упорядочен, Bag — нет","Set не допускает дубликатов, Bag допускает","Set имеет фиксированный размер","Set хранит пары ключ-значение"],a:1,e:"Set<T> — множество без дубликатов. Bag<T> — мультимножество, допускающее одинаковые элементы."},
+{s:"Типы данных ODL",q:"Каким типом ODL описывается ассоциативный массив (ключ → значение)?",opts:["Struct","Array<T,N>","Dictionary<S,T>","Bag<T>"],a:2,e:"Dictionary<S,T> — словарь (ассоциативный массив), где S — тип ключа, T — тип значения."},
+{s:"Типы данных ODL",q:"Как в ODL описать структуру с именованными полями разных типов?",opts:["List{string name, int age}","Struct{string name, integer age}","Array{string name, integer age}","Set{string name, integer age}"],a:1,e:"Struct{тип имя, тип2 имя2, ...} — структура с именованными полями. Обращение идёт по именам полей."},
+{s:"Типы данных ODL",q:"Атрибут класса имеет тип List<string>. Что это означает?",opts:["Неупорядоченное множество строк без дубликатов","Упорядоченный список строк (дубликаты разрешены)","Строка фиксированной длины","Словарь из строк"],a:1,e:"List<T> — упорядоченный список. Дубликаты разрешены, порядок элементов важен."},
+{s:"Типы данных ODL",q:"Какой тип коллекции имеет заранее определённый фиксированный размер N?",opts:["Set<T>","List<T>","Bag<T>","Array<T,N>"],a:3,e:"Array<T,N> — массив с заранее определённым количеством N элементов типа T."},
+{s:"Язык ODL",q:"Что обязательно нужно указать в описании класса, чтобы можно было создавать объекты этого класса?",opts:["Хотя бы один атрибут","Ключ (key)","Экстент (extent)","Хотя бы один метод"],a:2,e:"Для возможности создания объектов класса обязательно указывают его экстент (extent). Без экстента объекты класса создать нельзя."},
+{s:"Язык ODL",q:"Как задать составной ключ из полей field1 и field2 в ODL?",opts:["key field1, field2","key (field1, field2)","keys field1 field2","key {field1, field2}"],a:1,e:"Составной ключ задаётся перечислением полей внутри скобок: key (field1, field2)."},
+{s:"Язык ODL",q:"Как в ODL задать два альтернативных ключа — поле name и поле inn?",opts:["key (name, inn)","keys name, inn","key name AND inn","alternativeKey name, inn"],a:1,e:"Альтернативные ключи задают через запятую: keys name, inn. Каждый из них является самостоятельным ключом."},
+{s:"Язык ODL",q:"Какое ключевое слово используется для задания обратной стороны связи в ODL?",opts:["reverse","back","inverse","opposite"],a:2,e:"Ключевое слово inverse используется для указания обратной связи. Связь должна быть прописана в обоих классах."},
+{s:"Язык ODL",q:"Что означает запись relationship Set<Film> fs inverse Film::stud в классе Studia?",opts:["Studia связана с одним объектом Film","Studia связана со множеством объектов Film; обратная связь — stud в классе Film","Film связан со множеством Studia","Это описание атрибута типа Set"],a:1,e:"relationship Set<Film> fs — связь к множеству фильмов. inverse Film::stud — обратная сторона этой связи называется stud в классе Film."},
+{s:"Язык ODL",q:"Как в ODL объявить наследование класса A от класса B?",opts:["class A implements B","class A inherits B","class A extends B","class A: B"],a:2,e:"Наследование задаётся ключевым словом extends: class A extends B (...) {...}."},
+{s:"Язык ODL",q:"При множественном наследовании class A extends B: C, D — какой из базовых типов может быть классом?",opts:["Любой из B, C, D","Только B (первый в списке)","Только C и D","Все должны быть интерфейсами"],a:1,e:"Только первый базовый тип (B) может быть классом. Остальные (C, D) должны быть интерфейсами."},
+{s:"Язык ODL",q:"Какой модификатор параметра метода используется по умолчанию (передача по значению)?",opts:["out","inout","in","ref"],a:2,e:"Модификатор in означает передачу по значению и используется по умолчанию. out — выходной параметр, inout — по ссылке (вход и выход)."},
+{s:"Язык ODL",q:"Для чего используется ключевое слово raises в сигнатуре метода?",opts:["Для указания возвращаемого типа","Для перечисления исключений, которые метод может выбросить","Для передачи параметров","Для указания видимости метода"],a:1,e:"raises перечисляет исключения, которые могут быть вызваны данным методом. Например: raises(noAct, manyAct)."},
+{s:"Преобразование ER",q:"В что преобразуется сущность ER-модели при переходе к объектной модели?",opts:["В атрибут","В класс","В связь","В экстент"],a:1,e:"Сущность ER-модели → класс объектной модели. Атрибуты сущности → атрибуты класса. Ключ сущности → ключ класса."},
+{s:"Преобразование ER",q:"Как преобразуется бинарная связь М-М между классами A и B в объектной модели?",opts:["Создаётся промежуточная таблица","В каждый класс добавляется коллекция ссылок на связанный класс (Set<A> и Set<B>)","Один из классов поглощает другой","Связь М-М не поддерживается"],a:1,e:"Бинарная связь М-М преобразуется в связь classов: в A добавляется Set<B>, в B — Set<A>, оба с inverse."},
+{s:"Преобразование ER",q:"Как преобразуется связь ISA из ER-модели?",opts:["В отдельный класс-посредник","В иерархию наследования: базовая сущность → суперкласс, производная → подкласс","В атрибут типа enum","В связь 1-1"],a:1,e:"Связь ISA → иерархия наследования. Базовая сущность становится суперклассом, производная — подклассом через ключевое слово extends."},
+{s:"Преобразование ER",q:"Как преобразуется слабая сущность при переходе к объектной модели?",opts:["Удаляется, её атрибуты переходят к поддерживающей сущности","В класс с атрибутами слабой сущности и связями на поддерживающие классы","В интерфейс","В атрибут типа Struct"],a:1,e:"Слабая сущность → класс, содержащий её атрибуты и связи на поддерживающие классы. Её ключ = собственный ключ + ссылки на поддерживающие классы."},
+{s:"Язык OQL",q:"Чем конструкция FROM в OQL отличается от SQL?",opts:["FROM в OQL не используется","В OQL FROM содержит имя экстента и переменную-итератор","В OQL FROM заменяется JOIN","Разницы нет"],a:1,e:"В OQL: FROM Films m — переменная m перебирает каждый объект экстента Films. В SQL FROM содержит имя таблицы без переменной."},
+{s:"Язык OQL",q:"Как в OQL обозначается оператор «не равно»?",opts:["<>","!=","NOT=","=/="],a:1,e:"В OQL для оператора «не равно» используется символ !=, а не <> как в SQL."},
+{s:"Язык OQL",q:"Какой тип результата возвращает запрос SELECT m.name FROM Films m (без DISTINCT)?",opts:["Set<string>","List<string>","Bag<string>","Array<string>"],a:2,e:"По умолчанию SELECT возвращает Bag (мультимножество) — дубликаты разрешены, порядок не гарантирован."},
+{s:"Язык OQL",q:"Как получить упорядоченный список результатов в OQL?",opts:["GROUP BY","SELECT DISTINCT","ORDER BY","SORT BY"],a:2,e:"Для получения упорядоченного списка (List) используется фраза ORDER BY, как и в SQL."},
+{s:"Язык OQL",q:"Что означает p.stud.addr.city в точечной нотации OQL?",opts:["Метод city объекта p","Атрибут city структуры addr объекта, связанного с p через stud","Коллекция адресов студии","Вызов метода addr у объекта stud"],a:1,e:"Точечная нотация позволяет проходить по графу объектов: p.stud — переход по связи stud, .addr — поле addr, .city — поле city внутри структуры addr."},
+{s:"Язык OQL",q:"Чем стрелка (->) отличается от точки (.) в точечной нотации OQL?",opts:["Стрелка используется только для методов","Стрелка — синоним точки, разницы нет","Стрелка только для связей, точка — для атрибутов","Стрелка запрещена в OQL"],a:1,e:"В OQL стрелка (->) является синонимом точки (.). Можно использовать любой из двух способов."},
+{s:"Язык OQL",q:"Как записать запрос: «ФИО актёров, игравших в фильме Остров»?",opts:["SELECT a.fio FROM Actors a WHERE a.infs.name='Остров'","SELECT a.fio FROM Actors a, a.infs r WHERE r.name='Остров'","SELECT fio FROM Films WHERE name='Остров'","SELECT a.fio FROM Actors a JOIN Films f ON a.inn=f.inn WHERE f.name='Остров'"],a:1,e:"FROM Actors a, a.infs r — переменная r перебирает фильмы актёра a через связь infs. WHERE r.name='Остров' фильтрует по названию фильма."},
+{s:"Язык OQL",q:"Что возвращает FOR ALL x IN S: C(x)?",opts:["TRUE, если хотя бы один x удовлетворяет C(x)","TRUE, если каждый элемент x в S удовлетворяет C(x)","Коллекцию элементов, удовлетворяющих C(x)","Количество элементов, удовлетворяющих C(x)"],a:1,e:"FOR ALL — квантор всеобщности. Результат TRUE только если ВСЕ элементы коллекции S удовлетворяют условию C(x)."},
+{s:"Язык OQL",q:"Что возвращает EXISTS x IN S: C(x)?",opts:["TRUE, если все x удовлетворяют C(x)","TRUE, если хотя бы один x удовлетворяет C(x)","Количество удовлетворяющих элементов","Коллекцию удовлетворяющих элементов"],a:1,e:"EXISTS — квантор существования. Результат TRUE если ХОТЯ БЫ ОДИН элемент x в коллекции S удовлетворяет C(x)."},
+{s:"Язык OQL",q:"Как написать запрос «актёры, снимавшиеся ТОЛЬКО на студии Мосфильм»?",opts:["SELECT a.fio FROM Actors a WHERE a.infs.stud.sname='Мосфильм'","SELECT a.fio FROM Actors a WHERE EXISTS f IN a.infs: f.stud.sname='Мосфильм'","SELECT a.fio FROM Actors a WHERE FOR ALL f IN a.infs: f.stud.sname='Мосфильм'","SELECT a.fio FROM Actors a, a.infs f WHERE f.stud.sname='Мосфильм'"],a:2,e:"FOR ALL — все фильмы актёра должны быть сняты на Мосфильм. EXISTS дал бы актёров, снимавшихся хотя бы в одном фильме Мосфильма."},
+{s:"Язык OQL",q:"Как в OQL вычислить среднюю длительность всех фильмов?",opts:["SELECT AVG(len) FROM Films","AVG(SELECT m.len FROM Films m)","SELECT AVG FROM Films m GROUP BY m.len","AVERAGE(Films.len)"],a:1,e:"В OQL агрегирующая функция применяется к коллекции: AVG(SELECT m.len FROM Films m). Сначала формируем коллекцию длительностей, затем берём среднее."},
+{s:"Язык OQL",q:"Что такое partition в GROUP BY запросе OQL?",opts:["Имя группирующего атрибута","Мультимножество объектов, попавших в данную группу","Результирующий набор всего запроса","Условие фильтрации групп"],a:1,e:"partition — специальное поле в результате GROUP BY, содержащее мультимножество всех объектов, вошедших в данную группу. К нему применяют агрегирующие функции."},
+{s:"Язык OQL",q:"Какой оператор OQL служит для фильтрации групп, созданных GROUP BY?",opts:["WHERE","FILTER","HAVING","LIMIT"],a:2,e:"HAVING в OQL работает так же, как в SQL — устраняет группы, не удовлетворяющие условию. Условие относится к значению partition каждой группы."},
+{s:"Язык OQL",q:"Какие операции над коллекциями-множествами поддерживает OQL?",opts:["UNION, INTERSECT, EXCEPT","AND, OR, NOT","JOIN, MERGE, SPLIT","ADD, REMOVE, CLEAR"],a:0,e:"Как и в SQL, OQL поддерживает операции над коллекциями: UNION (объединение), INTERSECT (пересечение), EXCEPT (разность)."},
+{s:"Язык OQL",q:"Как получить множество (без дубликатов) из результата SELECT?",opts:["SELECT UNIQUE ...","SELECT DISTINCT ...","SELECT SET ...","SELECT ALL UNIQUE ..."],a:1,e:"SELECT DISTINCT возвращает Set (множество без дубликатов). Обычный SELECT возвращает Bag (мультимножество с дубликатами)."},
+{s:"Язык OQL",q:"Какой запрос выбирает ремейки (фильмы с одинаковым названием)?",opts:["SELECT f.name FROM Films f GROUP BY f.name HAVING COUNT>1","SELECT DISTINCT Struct(A1:S1,A2:S2) FROM Films S1, Films S2 WHERE S1.name=S2.name","SELECT f1,f2 FROM Films f1 JOIN Films f2 ON f1.name=f2.name","SELECT f.name FROM Films f WHERE f.name IN Films"],a:1,e:"Перебираем все пары фильмов S1 и S2. Если их названия совпадают — это ремейки. DISTINCT убирает дублирующиеся пары."},
+{s:"OML",q:"Как в OML создать новый объект класса Film?",opts:["Film f = Film.create()","Film f = new Film()","Film f = INSERT INTO Films","Film f = Film()"],a:1,e:"В OML объект создаётся оператором new: Film f = new Film(); Затем устанавливаются значения атрибутов."},
+{s:"OML",q:"Как в OML удалить объект f?",opts:["f.remove()","DROP f","Delete f","REMOVE FROM Films WHERE f"],a:2,e:"Для удаления объекта в OML используется оператор Delete f — аналог DELETE в SQL, но применяется к переменной-объекту."},
+{s:"Язык OQL",q:"Как в OQL записать GROUP BY по полям sname студии с именованием результата?",opts:["GROUP BY s.sname","GROUP BY name: s.sname","GROUP BY (name=s.sname)","GROUP BY s.sname AS name"],a:1,e:"В OQL GROUP BY требует задания имён для группирующих выражений: GROUP BY name: s.sname. Имя name затем используется в SELECT."},
+];
+
+let state=QUESTIONS.map(()=>null);
+let filter='all';
+
+function setFilter(f){
+  filter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  render();
+}
+
+function render(){
+  const sections=[...new Set(QUESTIONS.map(q=>q.s))];
+  const container=document.getElementById('quiz-list');
+  container.innerHTML='';
+  let shown=0;
+  sections.forEach(sec=>{
+    const qs=QUESTIONS.map((q,i)=>({...q,i})).filter(q=>q.s===sec);
+    const filtered=qs.filter(q=>{
+      if(filter==='all')return true;
+      if(filter==='unanswered')return state[q.i]===null;
+      if(filter==='wrong')return state[q.i]===false;
+      if(filter==='correct')return state[q.i]===true;
+      return true;
+    });
+    if(!filtered.length)return;
+    shown+=filtered.length;
+    const lbl=document.createElement('div');
+    lbl.className='section-label';
+    lbl.textContent=sec;
+    container.appendChild(lbl);
+    filtered.forEach(q=>{
+      container.appendChild(buildCard(q,q.i));
+    });
+  });
+  if(!shown){
+    const msg=document.createElement('div');
+    msg.style.cssText='text-align:center;padding:2rem;color:var(--color-text-secondary);font-size:14px';
+    msg.textContent='Нет вопросов в этой категории';
+    container.appendChild(msg);
+  }
+  updateStats();
+}
+
+function buildCard(q,idx){
+  const answered=state[idx]!==null;
+  const div=document.createElement('div');
+  div.className='q-card';
+  div.innerHTML=`<div class="q-num">Вопрос ${idx+1} из ${QUESTIONS.length}</div>
+<div class="q-text">${q.q}</div>
+<div class="options" id="opts-${idx}"></div>
+<div class="explanation ${answered?'show':''}" id="exp-${idx}">${q.e}</div>`;
+  const opts=div.querySelector(`#opts-${idx}`);
+  const letters=['А','Б','В','Г'];
+  q.opts.forEach((opt,oi)=>{
+    const btn=document.createElement('button');
+    let cls='opt';
+    if(answered){
+      cls+=' locked';
+      if(oi===q.a)cls+=' show-correct';
+      else if(oi===q._selected)cls+=(state[idx]===false?' wrong':'');
+    }
+    btn.className=cls;
+    btn.innerHTML=`<span class="opt-marker">${letters[oi]}</span><span>${opt}</span>`;
+    if(!answered){
+      btn.addEventListener('click',()=>answer(idx,oi,q.a));
+    }
+    opts.appendChild(btn);
+  });
+  return div;
+}
+
+function answer(idx,selected,correct){
+  QUESTIONS[idx]._selected=selected;
+  state[idx]=selected===correct;
+  render();
+  updateStats();
+}
+
+function updateStats(){
+  const answered=state.filter(s=>s!==null).length;
+  const correct=state.filter(s=>s===true).length;
+  const wrong=state.filter(s=>s===false).length;
+  const pct=answered>0?Math.round(correct/answered*100):0;
+  document.getElementById('s-correct').textContent=correct;
+  document.getElementById('s-wrong').textContent=wrong;
+  document.getElementById('s-pct').textContent=pct+'%';
+  document.getElementById('progress').style.width=(answered/QUESTIONS.length*100)+'%';
+}
+
+function showResults(){
+  const answered=state.filter(s=>s!==null).length;
+  const correct=state.filter(s=>s===true).length;
+  const pct=answered>0?Math.round(correct/answered*100):0;
+  const panel=document.getElementById('result-panel');
+  document.getElementById('r-score').textContent=correct+' / '+answered;
+  let msg='',color='';
+  if(pct>=90){msg='Отлично! Материал освоен 🎯';color='var(--color-text-success)'}
+  else if(pct>=70){msg='Хорошо! Есть небольшие пробелы';color='var(--color-text-warning)'}
+  else if(pct>=50){msg='Нужно повторить материал';color='var(--color-text-warning)'}
+  else{msg='Рекомендуем перечитать лекцию';color='var(--color-text-danger)'}
+  document.getElementById('r-score').style.color=color;
+  document.getElementById('r-msg').textContent=msg+' ('+pct+'%)';
+  panel.classList.add('show');
+  panel.scrollIntoView({behavior:'smooth'});
+}
+
+function resetAll(){
+  state=QUESTIONS.map(()=>null);
+  QUESTIONS.forEach(q=>delete q._selected);
+  filter='all';
+  document.querySelectorAll('.filter-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  render();
+}
+
+render();
+</script>

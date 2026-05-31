@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cassandra — Тест для самопроверки</title>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0e1a;
+    --surface: #111525;
+    --surface2: #161b30;
+    --border: #1e2640;
+    --accent: #4f8ef7;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --tag: #1e3a5f;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(79,142,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,142,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* GLOW ORBS */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.18;
+  }
+  .orb1 { width: 600px; height: 600px; background: #4f8ef7; top: -200px; left: -200px; }
+  .orb2 { width: 500px; height: 500px; background: #7c3aed; bottom: -200px; right: -200px; }
+
+  /* LAYOUT */
+  .wrapper { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    margin-bottom: 60px;
+    padding: 60px 40px;
+    background: linear-gradient(135deg, rgba(79,142,247,0.07), rgba(124,58,237,0.07));
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+  }
+  .header-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(79,142,247,0.1);
+    border: 1px solid rgba(79,142,247,0.25);
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: clamp(28px, 5vw, 48px);
+    background: linear-gradient(135deg, #e2e8f0, #4f8ef7, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .header-sub {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-num {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 28px;
+    color: var(--accent);
+    display: block;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* PROGRESS */
+  .progress-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .progress-label { font-size: 13px; color: var(--muted); white-space: nowrap; min-width: 80px; }
+  .progress-track {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .progress-pct { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); min-width: 36px; text-align: right; }
+
+  /* CATEGORIES */
+  .category-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    margin-top: 48px;
+  }
+  .cat-icon { font-size: 20px; }
+  .cat-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  .cat-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* QUESTION CARD */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    animation: slideIn 0.4s ease both;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .q-card:hover { border-color: rgba(79,142,247,0.3); box-shadow: 0 0 30px rgba(79,142,247,0.05); }
+  .q-card.answered-correct { border-color: var(--green); box-shadow: 0 0 20px rgba(34,197,94,0.1); }
+  .q-card.answered-wrong { border-color: var(--red); box-shadow: 0 0 20px rgba(239,68,68,0.1); }
+
+  .q-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 22px 24px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .q-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 8px;
+    min-width: 36px;
+    text-align: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .q-text { font-weight: 600; font-size: 15px; flex: 1; line-height: 1.5; }
+  .q-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .badge-easy { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-med { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .badge-hard { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* OPTIONS */
+  .q-options {
+    padding: 0 24px 20px;
+    display: grid;
+    gap: 8px;
+  }
+  .opt {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface2);
+    font-size: 14px;
+  }
+  .opt:hover { border-color: var(--accent); background: rgba(79,142,247,0.05); transform: translateX(3px); }
+  .opt.correct { border-color: var(--green); background: rgba(34,197,94,0.08); color: #86efac; }
+  .opt.wrong { border-color: var(--red); background: rgba(239,68,68,0.08); color: #fca5a5; }
+  .opt.revealed-correct { border-color: var(--green); background: rgba(34,197,94,0.05); }
+  .opt-letter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--border);
+    border-radius: 6px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .opt.correct .opt-letter { background: var(--green); color: #000; }
+  .opt.wrong .opt-letter { background: var(--red); color: #fff; }
+  .opt.revealed-correct .opt-letter { background: rgba(34,197,94,0.3); color: var(--green); }
+
+  /* EXPLANATION */
+  .explanation {
+    margin: 0 24px 20px;
+    padding: 14px 16px;
+    background: rgba(79,142,247,0.06);
+    border: 1px solid rgba(79,142,247,0.2);
+    border-radius: 10px;
+    font-size: 13px;
+    color: #94b8f5;
+    display: none;
+    line-height: 1.6;
+  }
+  .explanation.show { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .explanation strong { color: var(--accent); }
+
+  /* CODE INLINE */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: rgba(79,142,247,0.12);
+    color: #93c5fd;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  /* RESULTS PANEL */
+  .results-panel {
+    display: none;
+    margin-top: 40px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .results-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(79,142,247,0.05), rgba(124,58,237,0.05));
+  }
+  .results-panel.show { display: block; animation: slideIn 0.5s ease; }
+  .results-score {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 72px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin: 16px 0;
+    position: relative;
+  }
+  .results-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; position: relative; }
+  .results-msg { color: var(--muted); font-size: 14px; margin-bottom: 32px; position: relative; }
+  .results-breakdown {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+    position: relative;
+  }
+  .res-item {
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+  }
+  .res-item.c { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
+  .res-item.w { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); }
+  .res-item.s { border-color: rgba(79,142,247,0.3); background: rgba(79,142,247,0.05); }
+  .res-num { font-family: 'Dela Gothic One', sans-serif; font-size: 36px; display: block; }
+  .c .res-num { color: var(--green); }
+  .w .res-num { color: var(--red); }
+  .s .res-num { color: var(--accent); }
+  .res-lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 12px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    box-shadow: 0 4px 20px rgba(79,142,247,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(79,142,247,0.4); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); }
+
+  .actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 40px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  @media (max-width: 600px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .results-breakdown { grid-template-columns: 1fr; }
+    header { padding: 40px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="wrapper">
+
+  <header>
+    <div class="header-tag">♦ Постреляционные БД · Лекция №3</div>
+    <h1>Apache Cassandra<br>Тест для самопроверки</h1>
+    <p class="header-sub">50 вопросов · Модель данных · CQL · Репликация · Согласованность</p>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <span class="stat-num" id="s-total">50</span>
+      <span class="stat-label">Вопросов</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num" id="s-answered" style="color:var(--yellow)">0</span>
+      <span class="stat-label">Отвечено</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num" id="s-correct" style="color:var(--green)">0</span>
+      <span class="stat-label">Верно</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-num" id="s-wrong" style="color:var(--red)">0</span>
+      <span class="stat-label">Неверно</span>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <span class="progress-label">Прогресс</span>
+    <div class="progress-track"><div class="progress-fill" id="prog-fill"></div></div>
+    <span class="progress-pct" id="prog-pct">0%</span>
+  </div>
+
+  <div id="quiz-container"></div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="checkResults()">📊 Посмотреть результат</button>
+    <button class="btn btn-secondary" onclick="resetQuiz()">↺ Сбросить всё</button>
+  </div>
+
+  <div class="results-panel" id="results">
+    <div class="results-title" id="res-title">Результат теста</div>
+    <div class="results-score" id="res-score">0%</div>
+    <div class="results-msg" id="res-msg"></div>
+    <div class="results-breakdown">
+      <div class="res-item c"><span class="res-num" id="rb-c">0</span><span class="res-lbl">✓ Верно</span></div>
+      <div class="res-item w"><span class="res-num" id="rb-w">0</span><span class="res-lbl">✗ Неверно</span></div>
+      <div class="res-item s"><span class="res-num" id="rb-s">0</span><span class="res-lbl">◎ Пропущено</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  // ─── КАТЕГОРИЯ 1: Основы и терминология ───
+  {
+    cat: "🗂 Основы и терминология",
+    q: "Что является аналогом «базы данных» (schema) в Cassandra?",
+    opts: ["Семейство столбцов", "Пространство ключей (Keyspace)", "Кластер", "Строка"],
+    ans: 1,
+    diff: "easy",
+    exp: "<strong>Пространство ключей (Keyspace)</strong> — это аналог базы данных или схемы в реляционных СУБД. Оно содержит семейства столбцов и настройки репликации."
+  },
+  {
+    q: "Что является аналогом «таблицы» в Cassandra?",
+    opts: ["Строка (Row)", "Столбец (Column)", "Семейство столбцов (Column Family)", "Пространство ключей (Keyspace)"],
+    ans: 2,
+    diff: "easy",
+    exp: "<strong>Семейство столбцов (Column Family)</strong> — аналог таблицы. Его ключевое отличие от таблицы SQL в том, что разные строки могут иметь разный набор столбцов."
+  },
+  {
+    q: "Что является аналогом «сервера БД» в Cassandra?",
+    opts: ["Узел (Node)", "Кластер (Cluster)", "Координатор", "Пространство ключей"],
+    ans: 1,
+    diff: "easy",
+    exp: "<strong>Кластер</strong> — аналог сервера БД. Cassandra работает как распределённый кластер из нескольких узлов."
+  },
+  {
+    q: "Из каких трёх компонентов состоит базовый элемент (столбец) в Cassandra?",
+    opts: ["Ключ, значение, тип", "Имя, значение, метка времени (timestamp)", "ID, значение, индекс", "Ключ строки, имя, данные"],
+    ans: 1,
+    diff: "easy",
+    exp: "Столбец в Cassandra — это тройка: <strong>name</strong> (имя), <strong>value</strong> (значение), <strong>timestamp</strong> (метка времени). Timestamp нужен для разрешения конфликтов при репликации."
+  },
+  {
+    q: "Какие СУБД относятся к колоночным базам данных? (выберите наиболее полный ответ)",
+    opts: ["MySQL, PostgreSQL, SQLite", "MongoDB, Redis, Neo4j", "Cassandra, HBase, Amazon DynamoDB", "Kafka, RabbitMQ, Redis"],
+    ans: 2,
+    diff: "easy",
+    exp: "<strong>Cassandra, HBase, Amazon SimpleDB, Amazon DynamoDB, HyperTable</strong> — всё это колоночные (широкостолбцовые) базы данных. MySQL/PostgreSQL — реляционные, MongoDB — документная, Redis — ключ-значение."
+  },
+  {
+    q: "Для чего нужна метка времени (timestamp) в столбце Cassandra?",
+    opts: ["Для сортировки данных при выводе", "Для разрешения конфликтов при репликации, обновлении и удалении", "Для ограничения времени жизни (TTL)", "Для индексирования данных"],
+    ans: 1,
+    diff: "med",
+    exp: "<strong>Timestamp</strong> используется для разрешения конфликтов: если два узла имеют разные значения одного столбца, побеждает запись с <em>большим</em> timestamp (более поздняя). Также участвует в процессах обновления и удаления."
+  },
+  {
+    q: "Что такое суперстолбец (Super Column) в Cassandra?",
+    opts: ["Столбец с очень большим значением", "Столбец, значением которого является ассоциативный массив других столбцов", "Индексированный столбец", "Первичный ключ таблицы"],
+    ans: 1,
+    diff: "med",
+    exp: "<strong>Суперстолбец</strong> — это столбец, значением которого является не простое значение, а <em>словарь (ассоциативный массив) других столбцов</em>. Например, суперстолбец «bookA» может содержать author, izd, isbn."
+  },
+  {
+    q: "Могут ли разные строки в одном семействе столбцов иметь разный набор столбцов?",
+    opts: ["Нет, все строки должны иметь одинаковую структуру", "Да, каждая строка может иметь свой уникальный набор столбцов", "Только если создан специальный флаг при создании таблицы", "Только для суперстолбцов"],
+    ans: 1,
+    diff: "easy",
+    exp: "Это одно из ключевых отличий Cassandra от реляционных БД. <strong>Разные строки</strong> в одном column family могут иметь совершенно разные наборы столбцов — схема гибкая (schema-less / sparse)."
+  },
+  {
+    q: "С чем ассоциируется строка (Row) в Cassandra?",
+    opts: ["С именем таблицы", "С ключом строки (row key)", "С timestamp", "С именем пространства ключей"],
+    ans: 1,
+    diff: "easy",
+    exp: "Строка — это коллекция столбцов, которая ассоциируется с <strong>ключом строки (row key)</strong>. Это аналог первичного ключа в реляционной БД."
+  },
+  {
+    q: "Можно ли добавить новый столбец в семейство столбцов Cassandra без остановки системы?",
+    opts: ["Нет, нужно пересоздать таблицу", "Да, столбцы можно добавлять и удалять в любой момент времени", "Только в режиме обслуживания (maintenance mode)", "Только если нет активных запросов"],
+    ans: 1,
+    diff: "easy",
+    exp: "В Cassandra <strong>столбец можно добавить или удалить в любой момент</strong> без остановки системы. Это следствие гибкой схемы (schema-less)."
+  },
+
+  // ─── КАТЕГОРИЯ 2: Типы данных ───
+  {
+    cat: "🔢 Типы данных",
+    q: "Какой тип данных используется для хранения UUID с временной меткой?",
+    opts: ["UUIDType", "TimeUUIDType", "DateType", "LongType"],
+    ans: 1,
+    diff: "med",
+    exp: "<strong>TimeUUIDType</strong> — это UUID первого типа, который содержит встроенную временну́ю метку. Обычный <code>UUIDType</code> поддерживает UUID 1-го или 4-го типа без обязательной временной составляющей."
+  },
+  {
+    q: "Какой тип данных используется для реализации атомарного счётчика в Cassandra?",
+    opts: ["IntegerType", "LongType", "CounterColumnType", "Int32Type"],
+    ans: 2,
+    diff: "med",
+    exp: "<strong>CounterColumnType</strong> — 8-байтовый атомарный счётчик. Он поддерживает операцию атомарного инкремента/декремента, что критично в распределённой системе."
+  },
+  {
+    q: "Сколько байт занимает тип LongType?",
+    opts: ["4 байта", "6 байт", "8 байт", "16 байт"],
+    ans: 2,
+    diff: "easy",
+    exp: "<strong>LongType</strong> — это 8-байтовое целое число. Для сравнения: <code>Int32Type</code> — 4 байта, <code>FloatType</code> — 4 байта, <code>DoubleType</code> — 8 байт."
+  },
+  {
+    q: "Чем отличается AsciiType от UTF8Type?",
+    opts: ["Размером хранилища", "AsciiType — только ASCII-символы, UTF8Type — поддерживает Unicode (кириллицу и т.д.)", "UTF8Type быстрее при поиске", "Нет отличий, это синонимы"],
+    ans: 1,
+    diff: "easy",
+    exp: "<strong>AsciiType</strong> хранит только ASCII-строки (латиница, цифры, спецсимволы), <strong>UTF8Type</strong> поддерживает полный Unicode — кириллицу, иероглифы и любые другие символы."
+  },
+  {
+    q: "Какой тип данных хранит любые байтовые строки без валидации?",
+    opts: ["AsciiType", "UTF8Type", "BytesType", "BinaryType"],
+    ans: 2,
+    diff: "med",
+    exp: "<strong>BytesType</strong> хранит произвольные байтовые строки без какой-либо валидации. Подходит для хранения бинарных данных."
+  },
+
+  // ─── КАТЕГОРИЯ 3: CQL и запросы ───
+  {
+    cat: "💻 CQL — Cassandra Query Language",
+    q: "Какой командой создаётся семейство столбцов в CQL?",
+    opts: ["CREATE TABLE", "CREATE COLUMNFAMILY", "CREATE COLUMNS", "Оба варианта: CREATE TABLE и CREATE COLUMNFAMILY"],
+    ans: 3,
+    diff: "med",
+    exp: "В CQL можно использовать как <code>CREATE TABLE</code>, так и <code>CREATE COLUMNFAMILY</code> — это синонимы. На экзамене важно знать оба варианта."
+  },
+  {
+    q: "Что произойдёт при выполнении: <code>UPDATE Pers SET age = age + 1 WHERE key = 'u1'</code>?",
+    opts: ["Ошибка: нельзя использовать арифметику", "Значение поля age увеличится на 1 для строки с key='u1'", "Запрос создаст новую строку", "Обновятся все строки в таблице"],
+    ans: 1,
+    diff: "easy",
+    exp: "Cassandra CQL поддерживает <strong>инкремент/декремент в UPDATE</strong>. Выражение <code>age = age + 1</code> увеличит текущее значение поля age на единицу."
+  },
+  {
+    q: "Для чего используется директива ALLOW FILTERING в SELECT?",
+    opts: ["Для ускорения запроса", "Для разрешения полного сканирования таблицы при фильтрации по не индексированным полям", "Для использования регулярных выражений", "Для разрешения NULL-значений"],
+    ans: 1,
+    diff: "med",
+    exp: "<strong>ALLOW FILTERING</strong> позволяет делать выборку по полям, которые не входят в ключ и не проиндексированы. Это означает <em>полное чтение данных</em> (full scan) — крайне медленная операция на больших таблицах."
+  },
+  {
+    q: "Что такое TTL в контексте Cassandra?",
+    opts: ["Тип временного индекса", "Time To Live — время жизни записи в секундах, после которого она автоматически удаляется", "Transaction Transaction Log — журнал транзакций", "Тип данных для хранения времени"],
+    ans: 1,
+    diff: "easy",
+    exp: "<strong>TTL (Time To Live)</strong> — время жизни записи в секундах. После истечения TTL запись автоматически помечается как удалённая (tombstone) и физически удаляется при компакции."
+  },
+  {
+    q: "Как задать TTL при записи через старый клиент?",
+    opts: ["set Pers['id']['fio'] = 'value' EXPIRE 3600", "set Pers['id']['fio'] = 'value' with ttl 3600", "INSERT INTO Pers TTL 3600", "set ttl Pers['id']['fio'] = 3600"],
+    ans: 1,
+    diff: "med",
+    exp: "Синтаксис: <code>set Pers['id']['fio'] = 'значение' with ttl 3600</code> — запись будет автоматически удалена через 3600 секунд (1 час)."
+  },
+  {
+    q: "Какая конструкция CQL реализует условное обновление (только если запись существует)?",
+    opts: ["WHERE EXISTS", "IF EXISTS", "ONLY IF", "WHEN FOUND"],
+    ans: 1,
+    diff: "med",
+    exp: "<code>UPDATE ... IF EXISTS</code> — это <strong>lightweight transaction (LWT)</strong> в Cassandra. Обновление выполнится только если строка с заданным ключом уже существует."
+  },
+  {
+    q: "Какой запрос CQL позволяет получить максимальную цену для каждого названия курса?",
+    opts: ["SELECT title, price FROM course ORDER BY price DESC LIMIT 1", "SELECT title, MAX(price) FROM course GROUP BY title", "SELECT MAX(price) FROM course WHERE title IS NOT NULL", "SELECT title, TOP(price) FROM course"],
+    ans: 1,
+    diff: "med",
+    exp: "CQL поддерживает агрегатные функции и GROUP BY: <code>SELECT title, MAX(price) FROM course GROUP BY title</code> — вернёт максимальную цену для каждого отдельного курса."
+  },
+  {
+    q: "Что делает команда: <code>del Pers['id']</code>?",
+    opts: ["Удаляет столбец 'id' из таблицы Pers", "Удаляет всю строку с ключом 'id' из таблицы Pers", "Удаляет таблицу Pers", "Очищает значение поля id"],
+    ans: 1,
+    diff: "easy",
+    exp: "<code>del Pers['id']</code> — удаляет <strong>всю строку</strong> с ключом 'id'. Для удаления конкретного столбца используется: <code>del Pers['id']['имя_столбца']</code>."
+  },
+  {
+    q: "Что такое материализованное представление (Materialized View) в CQL?",
+    opts: ["Временная таблица для JOIN-операций", "Автоматически обновляемое представление, основанное на данных исходной таблицы с другим первичным ключом", "Индексированный столбец", "Кэш запросов"],
+    ans: 1,
+    diff: "hard",
+    exp: "<strong>Materialized View</strong> — это представление, которое <em>автоматически обновляется</em> при изменении данных в исходной таблице. Позволяет эффективно запрашивать данные по разным ключам без дублирования кода."
+  },
+  {
+    q: "Как получить конкретный столбец строки через старый клиент?",
+    opts: ["get Pers where fio", "get Pers['id']['fio']", "select fio from Pers where id='id'", "fetch Pers.id.fio"],
+    ans: 1,
+    diff: "easy",
+    exp: "Синтаксис получения конкретного столбца: <code>get Pers['ключ_строки']['имя_столбца']</code>. Для получения всей строки: <code>get Pers['ключ_строки']</code>."
+  },
+
+  // ─── КАТЕГОРИЯ 4: Пространство ключей ───
+  {
+    cat: "🗝 Пространство ключей и ключи",
+    q: "Какая стратегия репликации используется для одного датацентра?",
+    opts: ["NetworkTopologyStrategy", "SimpleStrategy", "LocalStrategy", "SingleDatacenterStrategy"],
+    ans: 1,
+    diff: "easy",
+    exp: "<strong>SimpleStrategy</strong> — для одного датацентра, задаётся <code>replication_factor</code>. <strong>NetworkTopologyStrategy</strong> — для нескольких датацентров, задаётся количество реплик отдельно для каждого DC."
+  },
+  {
+    q: "Что определяет параметр replication_factor при создании keyspace?",
+    opts: ["Количество датацентров", "Количество копий данных, которые хранятся в кластере", "Максимальный размер данных", "Количество узлов в кластере"],
+    ans: 1,
+    diff: "easy",
+    exp: "<strong>replication_factor</strong> (N) — это количество копий каждой строки данных в кластере. Например, <code>replication_factor: 3</code> означает, что каждая запись хранится на 3 разных узлах."
+  },
+  {
+    q: "Что такое распределительный ключ (Partition Key)?",
+    opts: ["Ключ, определяющий порядок сортировки данных внутри узла", "Ключ, определяющий на каком узле кластера будет храниться строка (через хэш-функцию)", "Ключ для шифрования данных", "Вторичный индекс"],
+    ans: 1,
+    diff: "med",
+    exp: "<strong>Partition Key (распределительный ключ)</strong> — Cassandra применяет к нему хэш-функцию и по результату определяет, на каком узле (partition) хранить данные. Все строки с одинаковым partition key хранятся вместе."
+  },
+  {
+    q: "Что определяет кластерный ключ (Clustering Key)?",
+    opts: ["Узел хранения данных", "Порядок сортировки данных внутри одного раздела (partition)", "Стратегию репликации", "Количество копий данных"],
+    ans: 1,
+    diff: "med",
+    exp: "<strong>Clustering Key</strong> определяет порядок физического хранения и сортировки данных <em>внутри одного раздела</em>. Позволяет эффективно делать range-запросы по этому ключу."
+  },
+  {
+    q: "В конструкции <code>PRIMARY KEY ((cluster, date), time)</code> что является распределительным ключом?",
+    opts: ["cluster", "time", "(cluster, date) — составной распределительный ключ", "cluster, date, time"],
+    ans: 2,
+    diff: "hard",
+    exp: "Внешние скобки <code>((cluster, date))</code> обозначают <strong>составной распределительный ключ</strong>. Только строки с одинаковыми значениями обоих полей (cluster И date) попадут на один узел. <code>time</code> — кластерный ключ."
+  },
+  {
+    q: "Какие операторы поддерживает секция WHERE для столбцов распределительного ключа?",
+    opts: ["=, IN, >, <, >=, <=", "Только = и IN", "Все операторы SQL", "Только ="],
+    ans: 1,
+    diff: "med",
+    exp: "Столбцы <strong>распределительного ключа</strong> поддерживают только операторы <code>=</code> и <code>IN</code>. Это связано с тем, что Cassandra должна точно определить, на каком узле хранятся данные."
+  },
+  {
+    q: "Для чего используется CLUSTERING ORDER BY в CREATE TABLE?",
+    opts: ["Для сортировки результатов SELECT", "Для задания порядка физического хранения данных по кластерному ключу", "Для создания индекса", "Для задания типа репликации"],
+    ans: 1,
+    diff: "hard",
+    exp: "<code>CLUSTERING ORDER BY (time DESC)</code> задаёт <strong>порядок физического хранения данных</strong> по кластерному ключу. Если задан DESC, то новые данные (с большим временем) будут читаться первыми — эффективно для временны́х рядов."
+  },
+  {
+    q: "Какой тип индексов использует Cassandra, и когда они наиболее эффективны?",
+    opts: ["B-tree индексы, эффективны всегда", "Битовые индексы, эффективны при небольшом количестве уникальных значений столбца", "Хэш-индексы, эффективны для точечных запросов", "Полнотекстовые индексы, эффективны для текстового поиска"],
+    ans: 1,
+    diff: "hard",
+    exp: "Cassandra использует <strong>битовые индексы</strong>, которые наиболее эффективны при небольшом количестве уникальных значений (низкой кардинальности) — например, статус заказа (новый/в обработке/завершён)."
+  },
+
+  // ─── КАТЕГОРИЯ 5: Масштабирование и архитектура ───
+  {
+    cat: "⚡ Масштабирование и архитектура",
+    q: "Какой тип масштабирования поддерживает Cassandra?",
+    opts: ["Только вертикальное (увеличение мощности одного сервера)", "Только горизонтальное (добавление новых узлов)", "Оба типа в равной мере", "Не поддерживает масштабирование"],
+    ans: 1,
+    diff: "easy",
+    exp: "Cassandra поддерживает <strong>горизонтальное масштабирование (scale out)</strong> — добавление новых узлов в кластер. При этом кластер <em>не нужно останавливать</em>, и автоматически увеличивается ёмкость и пропускная способность."
+  },
+  {
+    q: "Нужно ли останавливать кластер Cassandra для добавления нового узла?",
+    opts: ["Да, всегда нужно остановить весь кластер", "Нет, узлы добавляются без остановки кластера", "Да, нужно остановить только затронутые узлы", "Зависит от уровня согласованности"],
+    ans: 1,
+    diff: "easy",
+    exp: "Одно из ключевых преимуществ Cassandra: <strong>узлы добавляются без остановки кластера</strong>. Cassandra автоматически перераспределяет данные (rebalancing) при добавлении нового узла."
+  },
+  {
+    q: "Что такое одноранговая (peer-to-peer) репликация в Cassandra?",
+    opts: ["Репликация данных только между двумя узлами", "Архитектура без главного узла, где все узлы равноправны", "Репликация только в пределах одного датацентра", "Синхронная репликация между всеми узлами"],
+    ans: 1,
+    diff: "med",
+    exp: "<strong>Peer-to-peer (одноранговая) репликация</strong> означает, что в Cassandra <em>нет master-узла</em>. Все узлы равноправны: каждый может принять запрос от клиента и стать координатором."
+  },
+  {
+    q: "Что такое координатор в Cassandra?",
+    opts: ["Специальный выделенный сервер управления", "Любой узел кластера, принявший запрос клиента и управляющий его выполнением", "Узел с наибольшим количеством данных", "Главный узел для записи"],
+    ans: 1,
+    diff: "med",
+    exp: "<strong>Координатор</strong> — это роль, а не выделенный узел. Любой узел кластера, принявший запрос от клиента, берёт на себя роль координатора: рассылает запросы репликам и собирает ответы."
+  },
+  {
+    q: "Что происходит при добавлении нового узла с точки зрения ёмкости?",
+    opts: ["Ёмкость не меняется", "Увеличивается общая ёмкость хранилища и количество операций чтения/записи", "Только увеличивается скорость чтения", "Только увеличивается скорость записи"],
+    ans: 1,
+    diff: "easy",
+    exp: "При добавлении узла в кластер Cassandra <strong>одновременно увеличивается</strong>: общая ёмкость хранилища И пропускная способность (throughput) для операций чтения и записи."
+  },
+
+  // ─── КАТЕГОРИЯ 6: Согласованность и доступность ───
+  {
+    cat: "⚖️ Согласованность и доступность",
+    q: "Что означает параметр N в контексте Cassandra?",
+    opts: ["Количество запросов в секунду", "Уровень репликации — количество копий данных", "Количество узлов в кластере", "Количество датацентров"],
+    ans: 1,
+    diff: "easy",
+    exp: "<strong>N (replication factor)</strong> — уровень репликации, то есть количество копий каждой строки данных. Задаётся при создании keyspace. N=3 означает 3 копии на 3 разных узлах."
+  },
+  {
+    q: "При каком условии гарантируется строгая согласованность чтения/записи?",
+    opts: ["R > N или W > N", "R + W > N", "R = W = N", "R > 1 и W > 1"],
+    ans: 1,
+    diff: "hard",
+    exp: "Если <strong>(R + W) > N</strong>, то гарантируется строгая согласованность — хотя бы один узел, участвующий в чтении, всегда будет содержать актуальные данные от последней записи."
+  },
+  {
+    q: "N=3, R=1, W=2. Что произойдёт, если 2 узла выйдут из строя?",
+    opts: ["Нет ни чтения, ни записи", "Чтение есть, записи нет", "Запись есть, чтения нет", "Всё работает нормально"],
+    ans: 1,
+    diff: "hard",
+    exp: "При N=3, R=1, W=2 и отказе 2 узлов: <strong>чтение возможно</strong> (нужен 1 узел, 1 живой есть), но <strong>запись невозможна</strong> (нужны 2 узла, только 1 живой). R+W=3=N — нет гарантии строгой согласованности."
+  },
+  {
+    q: "N=3, R=2, W=1. Что произойдёт, если 2 узла выйдут из строя?",
+    opts: ["Нет ни чтения, ни записи", "Чтение есть, записи нет", "Запись есть, чтения нет", "Всё работает нормально"],
+    ans: 2,
+    diff: "hard",
+    exp: "При N=3, R=2, W=1 и отказе 2 узлов: <strong>запись возможна</strong> (нужен 1 узел, 1 живой есть), но <strong>чтение невозможно</strong> (нужны 2 узла, только 1 живой)."
+  },
+  {
+    q: "Какой уровень согласованности чтения задан в Cassandra по умолчанию?",
+    opts: ["QUORUM", "ALL", "ONE", "TWO"],
+    ans: 2,
+    diff: "med",
+    exp: "По умолчанию для всех операций (чтения и записи) установлен уровень <strong>ONE</strong>. Он обеспечивает максимальную скорость, но данные могут быть устаревшими. Параметр задаётся через CONSISTENCY."
+  },
+  {
+    q: "Что такое уровень согласованности QUORUM?",
+    opts: ["Чтение/запись со всех узлов", "Чтение/запись с одного ближайшего узла", "Чтение/запись с более чем половины узлов-реплик: round(N/2)+1", "Чтение/запись с двух узлов"],
+    ans: 2,
+    diff: "med",
+    exp: "<strong>QUORUM</strong> = <code>round(N/2)+1</code> узлов. Например, при N=3: round(3/2)+1 = 2 узла. Это оптимальный баланс между согласованностью и производительностью."
+  },
+  {
+    q: "Чем уровень LOCAL_QUORUM отличается от QUORUM?",
+    opts: ["LOCAL_QUORUM требует меньше узлов", "LOCAL_QUORUM собирает кворум только в том датацентре, где находится координатор, избегая задержек межцентровой связи", "LOCAL_QUORUM работает только для записи", "Нет разницы"],
+    ans: 1,
+    diff: "hard",
+    exp: "<strong>LOCAL_QUORUM</strong> собирает кворум только в <em>местном датацентре</em>, не дожидаясь ответов от удалённых датацентров. Это снижает задержки при мультидатацентровой топологии."
+  },
+  {
+    q: "Что происходит при уровне согласованности ALL при отказе одного из узлов-реплик?",
+    opts: ["Операция завершается с данными от доступных узлов", "Операция блокируется (недоступна)", "Операция переходит на уровень QUORUM", "Данные читаются с координатора"],
+    ans: 1,
+    diff: "med",
+    exp: "При уровне <strong>ALL</strong> координатор ждёт ответа от <em>всех</em> узлов-реплик. Если хотя бы один недоступен — <strong>операция блокируется</strong>. Это максимальная согласованность ценой минимальной доступности."
+  },
+  {
+    q: "В чём отличие уровня записи ANY от уровня ONE?",
+    opts: ["ANY требует подтверждения от одного узла-реплики, ONE — нет", "ANY позволяет записать даже если все реплики недоступны (через hinted handoff), ONE требует подтверждения хотя бы от одной реплики", "Нет разницы", "ONE быстрее чем ANY"],
+    ans: 1,
+    diff: "hard",
+    exp: "<strong>ANY</strong> — самый слабый уровень: данные могут сохраниться только на координаторе через механизм <em>hinted handoff</em>, даже если все реплики недоступны. <strong>ONE</strong> требует подтверждения от хотя бы одной живой реплики."
+  },
+  {
+    q: "Что такое read repair в Cassandra?",
+    opts: ["Исправление синтаксических ошибок в запросах", "Механизм автоматического исправления устаревших данных на репликах в процессе чтения", "Восстановление данных из резервной копии", "Исправление данных после сбоя питания"],
+    ans: 1,
+    diff: "med",
+    exp: "<strong>Read repair</strong> — механизм согласования данных. При чтении координатор сравнивает данные с разных реплик. Если обнаружены расхождения (устаревшие данные), реплика с устаревшими данными <em>автоматически обновляется</em>."
+  },
+  {
+    q: "Что такое hinted handoff?",
+    opts: ["Передача данных между датацентрами", "Механизм сохранения данных на координаторе для передачи их восстановившейся реплике", "Алгоритм балансировки нагрузки", "Механизм шифрования данных при передаче"],
+    ans: 1,
+    diff: "hard",
+    exp: "<strong>Hinted handoff</strong>: если узел-реплика временно недоступен, координатор сохраняет данные у себя с «подсказкой» (hint). Когда реплика восстанавливается, координатор передаёт ей накопленные данные."
+  },
+
+  // ─── КАТЕГОРИЯ 7: Применение ───
+  {
+    cat: "🎯 Применение и ограничения",
+    q: "Для каких задач хорошо подходит Cassandra?",
+    opts: ["Финансовые транзакции с требованием ACID", "Регистрация событий, счётчики посещений, контент со сроком действия", "Сложные JOIN-запросы между множеством таблиц", "Хранение небольших объёмов строго структурированных данных"],
+    ans: 1,
+    diff: "easy",
+    exp: "Cassandra хорошо подходит для: <strong>регистрации событий (логов)</strong>, управления блогами, <strong>счётчиков посещений</strong> (CounterColumnType), <strong>контента со сроком действия</strong> (реклама, новости — через TTL)."
+  },
+  {
+    q: "Почему Cassandra НЕ подходит для задач с полноценными транзакциями?",
+    opts: ["Из-за медленной скорости записи", "Cassandra не поддерживает полноценные ACID-транзакции между несколькими строками/таблицами", "Из-за высокой стоимости лицензии", "Из-за ограничения на размер данных"],
+    ans: 1,
+    diff: "med",
+    exp: "Cassandra <strong>не поддерживает полноценные ACID-транзакции</strong> (atomicity, consistency, isolation, durability) через несколько строк или таблиц. Она ориентирована на высокую доступность и скорость, жертвуя строгой согласованностью."
+  },
+  {
+    q: "Почему сложная агрегация данных (GROUP BY, сложные JOIN) не рекомендуется в Cassandra?",
+    opts: ["Cassandra не поддерживает GROUP BY вообще", "Cassandra поддерживает только базовую агрегацию; сложная агрегация должна выполняться на стороне клиента, так как нет JOIN между таблицами", "GROUP BY доступен только в Enterprise-версии", "Агрегация работает только для числовых типов"],
+    ans: 1,
+    diff: "med",
+    exp: "Cassandra поддерживает базовую агрегацию (MAX, MIN, COUNT, GROUP BY), но <strong>не поддерживает JOIN</strong> между таблицами. Сложная аналитика и агрегация предполагают <em>выгрузку данных на клиент</em> или использование специализированных инструментов (Spark)."
+  },
+  {
+    q: "Почему Cassandra не рекомендуется для проектирования «на раннем этапе»?",
+    opts: ["Из-за высокой стоимости", "Схема данных в Cassandra должна проектироваться под конкретные запросы; если запросы ещё не известны, спроектировать эффективную модель сложно", "Из-за сложности установки", "Из-за отсутствия документации"],
+    ans: 1,
+    diff: "hard",
+    exp: "В Cassandra <strong>схема проектируется под запросы</strong> (query-driven design), а не под данные. Первичный ключ выбирается исходя из того, как будут запрашиваться данные. Если запросы ещё не определены — правильно спроектировать модель практически невозможно."
+  },
+  {
+    q: "Какой тип данных Cassandra идеально подходит для реализации счётчика посещений сайта?",
+    opts: ["IntegerType", "LongType", "CounterColumnType", "Int32Type"],
+    ans: 2,
+    diff: "easy",
+    exp: "<strong>CounterColumnType</strong> — специальный тип для атомарных счётчиков. Поддерживает атомарный инкремент/декремент в распределённой среде, что критично для корректного подсчёта посещений."
+  },
+  {
+    q: "Что лучше всего использовать для контента с ограниченным сроком действия (реклама, акции)?",
+    opts: ["Периодически запускать скрипт удаления устаревших данных", "TTL (Time To Live) — автоматическое удаление данных после заданного времени", "Хранить дату окончания и фильтровать при выборке", "Материализованные представления"],
+    ans: 1,
+    diff: "easy",
+    exp: "<strong>TTL (Time To Live)</strong> — идеальный инструмент для временного контента. Задаётся в секундах при записи; Cassandra автоматически удаляет данные после истечения TTL. Не нужны отдельные задания по очистке."
+  },
+  {
+    q: "Какое ключевое преимущество Cassandra перед реляционными СУБД при больших нагрузках?",
+    opts: ["Поддержка сложных JOIN-запросов", "Горизонтальное масштабирование без остановки, высокая доступность при отказах узлов", "Строгие ACID-транзакции", "Встроенный язык программирования"],
+    ans: 1,
+    diff: "easy",
+    exp: "Главные преимущества Cassandra: <strong>горизонтальное масштабирование</strong> (добавление узлов без остановки), <strong>высокая доступность</strong> (peer-to-peer, нет единой точки отказа), и <strong>высокая скорость записи</strong> при больших объёмах данных."
+  }
+];
+
+// State
+let answered = new Set();
+let correct = new Set();
+let wrong = new Set();
+
+function getDiff(d) {
+  if (d === 'easy') return ['badge-easy', 'Лёгкий'];
+  if (d === 'med') return ['badge-med', 'Средний'];
+  return ['badge-hard', 'Сложный'];
+}
+
+function buildQuiz() {
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = '';
+  let currentCat = '';
+  let catIndex = 0;
+  const letters = ['A', 'B', 'C', 'D'];
+
+  questions.forEach((q, qi) => {
+    if (q.cat && q.cat !== currentCat) {
+      currentCat = q.cat;
+      catIndex++;
+      const catDiv = document.createElement('div');
+      catDiv.className = 'category-label';
+      catDiv.innerHTML = `<span class="cat-icon">${q.cat.split(' ')[0]}</span><span class="cat-text">${q.cat.split(' ').slice(1).join(' ')}</span><div class="cat-line"></div>`;
+      container.appendChild(catDiv);
+    }
+
+    const [badgeClass, badgeText] = getDiff(q.diff);
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.id = `card-${qi}`;
+    card.style.animationDelay = (qi * 0.03) + 's';
+
+    const optsHTML = q.opts.map((opt, oi) => `
+      <div class="opt" id="opt-${qi}-${oi}" onclick="selectAnswer(${qi}, ${oi})">
+        <span class="opt-letter">${letters[oi]}</span>
+        <span>${opt}</span>
+      </div>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="q-header">
+        <span class="q-num">${String(qi + 1).padStart(2, '0')}</span>
+        <span class="q-text">${q.q}</span>
+        <span class="q-badge ${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="q-options">${optsHTML}</div>
+      <div class="explanation" id="exp-${qi}">💡 ${q.exp}</div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function selectAnswer(qi, oi) {
+  if (answered.has(qi)) return;
+  answered.add(qi);
+
+  const q = questions[qi];
+  const card = document.getElementById(`card-${qi}`);
+  const exp = document.getElementById(`exp-${qi}`);
+  const letters = ['A', 'B', 'C', 'D'];
+
+  q.opts.forEach((_, optIdx) => {
+    const optEl = document.getElementById(`opt-${qi}-${optIdx}`);
+    optEl.style.pointerEvents = 'none';
+    optEl.style.cursor = 'default';
+    if (optIdx === q.ans) {
+      optEl.classList.add(oi === q.ans ? 'correct' : 'revealed-correct');
+    }
+    if (optIdx === oi && oi !== q.ans) {
+      optEl.classList.add('wrong');
+    }
+  });
+
+  if (oi === q.ans) {
+    correct.add(qi);
+    card.classList.add('answered-correct');
+  } else {
+    wrong.add(qi);
+    card.classList.add('answered-wrong');
+  }
+
+  exp.classList.add('show');
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('s-answered').textContent = answered.size;
+  document.getElementById('s-correct').textContent = correct.size;
+  document.getElementById('s-wrong').textContent = wrong.size;
+
+  const pct = Math.round((answered.size / questions.length) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+}
+
+function checkResults() {
+  const total = questions.length;
+  const c = correct.size;
+  const w = wrong.size;
+  const skipped = total - answered.size;
+  const score = Math.round((c / total) * 100);
+
+  let msg = '';
+  if (score >= 90) msg = '🏆 Отлично! Вы блестяще знаете материал!';
+  else if (score >= 75) msg = '🎯 Хороший результат! Ещё немного практики — и всё будет отлично.';
+  else if (score >= 60) msg = '📚 Неплохо, но стоит повторить некоторые темы.';
+  else if (score >= 40) msg = '⚠️ Нужно серьёзно повторить лекцию перед контролем.';
+  else msg = '🔄 Рекомендуем внимательно перечитать конспект и пройти тест заново.';
+
+  document.getElementById('res-score').textContent = score + '%';
+  document.getElementById('res-title').textContent = 'Ваш результат: ' + c + ' из ' + total;
+  document.getElementById('res-msg').textContent = msg;
+  document.getElementById('rb-c').textContent = c;
+  document.getElementById('rb-w').textContent = w;
+  document.getElementById('rb-s').textContent = skipped;
+
+  const panel = document.getElementById('results');
+  panel.classList.add('show');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetQuiz() {
+  answered.clear();
+  correct.clear();
+  wrong.clear();
+  document.getElementById('results').classList.remove('show');
+  buildQuiz();
+  updateStats();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+buildQuiz();
+updateStats();
+</script>
+</body>
+</html>
