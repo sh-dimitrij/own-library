@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL: Объектно-реляционные расширения — Тест</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #ffffff12;
+    --border-active: #4f8fff55;
+    --accent: #4f8fff;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --danger: #f87171;
+    --text: #e8eaf0;
+    --text-muted: #8892a4;
+    --text-dim: #4a5568;
+    --correct-bg: #0d2a1f;
+    --correct-border: #34d39960;
+    --correct-text: #34d399;
+    --wrong-bg: #2a0d0d;
+    --wrong-border: #f8717160;
+    --wrong-text: #f87171;
+    --card-radius: 16px;
+    --opt-radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow blobs */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.18;
+  }
+  .blob-1 { width: 500px; height: 500px; background: #4f8fff; top: -150px; left: -150px; }
+  .blob-2 { width: 400px; height: 400px; background: #a78bfa; bottom: -100px; right: -100px; }
+  .blob-3 { width: 300px; height: 300px; background: #34d399; top: 40%; left: 60%; }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 24px 100px;
+  }
+
+  /* HEADER */
+  .header {
+    margin-bottom: 56px;
+  }
+  .header-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: 1px solid var(--accent);
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    opacity: 0.85;
+  }
+  h1 {
+    font-family: 'Unbounded', sans-serif;
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #e8eaf0 0%, #8892a4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 100px;
+    transition: border-color 0.3s;
+  }
+  .stat-val {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .stat-val.accent { color: var(--accent); }
+  .stat-val.correct { color: var(--correct-text); }
+  .stat-val.wrong { color: var(--wrong-text); }
+  .stat-label {
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* PROGRESS */
+  .progress-wrap {
+    margin-bottom: 40px;
+  }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 8px;
+  }
+  .progress-track {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: -2px;
+    width: 8px; height: 7px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent);
+  }
+
+  /* QUESTION CARD */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 32px;
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeUp 0.4s ease forwards;
+    position: relative;
+    overflow: hidden;
+  }
+  .q-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+    opacity: 0.6;
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .q-num-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 6px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .q-text {
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.55;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+  .q-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    background: var(--surface2);
+    color: var(--accent);
+    padding: 1px 7px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+  }
+
+  /* OPTIONS */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--opt-radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+  }
+  .opt:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: #4f8fff0d;
+    transform: translateX(3px);
+  }
+  .opt:disabled { cursor: default; }
+
+  .opt-letter {
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dim);
+    transition: all 0.2s;
+  }
+
+  .opt.correct {
+    background: var(--correct-bg);
+    border-color: var(--correct-border);
+    color: var(--correct-text);
+    transform: none;
+  }
+  .opt.correct .opt-letter {
+    background: var(--correct-text);
+    border-color: var(--correct-text);
+    color: #0a0c10;
+  }
+  .opt.wrong {
+    background: var(--wrong-bg);
+    border-color: var(--wrong-border);
+    color: var(--wrong-text);
+    transform: none;
+  }
+  .opt.wrong .opt-letter {
+    background: var(--wrong-text);
+    border-color: var(--wrong-text);
+    color: #0a0c10;
+  }
+  .opt.missed {
+    background: var(--correct-bg);
+    border-color: var(--correct-border);
+    opacity: 0.55;
+  }
+
+  /* EXPLANATION */
+  .explanation {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    margin-top: 4px;
+    animation: fadeUp 0.3s ease forwards;
+  }
+  .explanation strong { color: var(--text); }
+  .explanation code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: #ffffff0a;
+    color: var(--accent);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  /* NAV */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover:not(:disabled) {
+    background: var(--surface2);
+    border-color: var(--border-active);
+    color: var(--text);
+  }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    font-weight: 700;
+  }
+  .nav-btn.primary:hover:not(:disabled) {
+    background: #3a75ef;
+    border-color: #3a75ef;
+    color: white;
+  }
+
+  /* DOTS */
+  .dots-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 32px 0 0;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+  }
+  .dots-label {
+    width: 100%;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+  }
+  .dot {
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim);
+  }
+  .dot:hover { border-color: var(--accent); color: var(--accent); }
+  .dot.current { border-color: var(--accent); background: #4f8fff22; color: var(--accent); }
+  .dot.answered-correct { background: #0d2a1f; border-color: var(--correct-border); color: var(--correct-text); }
+  .dot.answered-wrong { background: var(--wrong-bg); border-color: var(--wrong-border); color: var(--wrong-text); }
+
+  /* RESULT SCREEN */
+  .result-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 24px;
+    animation: fadeUp 0.5s ease forwards;
+  }
+  .result-screen.show { display: block; }
+
+  .result-ring-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+  }
+  .result-ring {
+    position: relative;
+    width: 180px; height: 180px;
+  }
+  .result-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface2); stroke-width: 10; }
+  .ring-fill {
+    fill: none;
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 502;
+    stroke-dashoffset: 502;
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1);
+  }
+  .result-num {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Unbounded', sans-serif;
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .result-pct {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  .result-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--text), var(--text-muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .result-msg {
+    color: var(--text-muted);
+    font-size: 15px;
+    max-width: 480px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+  .result-stats {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+  .result-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 28px;
+    min-width: 120px;
+  }
+  .result-stat-val {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    display: block;
+  }
+  .result-stat-val.c { color: var(--correct-text); }
+  .result-stat-val.w { color: var(--wrong-text); }
+  .result-stat-val.s { color: var(--accent); }
+  .result-stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .restart-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .restart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px #4f8fff33;
+  }
+
+  /* TOPIC FILTER */
+  .filter-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+
+  /* CODE BLOCK in question */
+  .q-code {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: #cdd9e5;
+    line-height: 1.7;
+    margin: 12px 0 20px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 32px 16px 80px; }
+    .q-card { padding: 20px; }
+    .q-text { font-size: 15px; }
+    .stat { min-width: 80px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="wrap">
+
+  <div class="header">
+    <div class="header-tag">// МГТУ · ПБД · Лекция №2</div>
+    <h1>Объектно-реляционное<br>расширение SQL</h1>
+    <p class="subtitle">50 вопросов для самопроверки · Хранимые процедуры, триггеры, рекурсия, представления</p>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-val accent" id="stat-cur">1</span>
+      <span class="stat-label">вопрос</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val correct" id="stat-ok">0</span>
+      <span class="stat-label">верно</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val wrong" id="stat-err">0</span>
+      <span class="stat-label">ошибок</span>
+    </div>
+    <div class="stat" style="margin-left:auto">
+      <span class="stat-val accent" id="stat-pct">0%</span>
+      <span class="stat-label">результат</span>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-wrap">
+    <div class="progress-info">
+      <span id="prog-label">0 / 50</span>
+      <span id="prog-topic" style="color:var(--accent2)"></span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz-area"></div>
+
+  <!-- DOTS NAV -->
+  <div class="dots-wrap" id="dots-wrap">
+    <div class="dots-label">Навигация по вопросам</div>
+    <div id="dots"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result-screen" id="result-screen">
+    <div class="result-ring-wrap">
+      <div class="result-ring">
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <circle class="ring-bg" cx="90" cy="90" r="80"/>
+          <circle class="ring-fill" id="ring-fill" cx="90" cy="90" r="80"/>
+        </svg>
+        <div class="result-num" id="result-num">0</div>
+        <div class="result-pct" id="result-pct">из 50</div>
+      </div>
+    </div>
+    <div class="result-title" id="result-title">Тест завершён</div>
+    <p class="result-msg" id="result-msg"></p>
+    <div class="result-stats">
+      <div class="result-stat">
+        <span class="result-stat-val c" id="rs-ok">0</span>
+        <span class="result-stat-label">верно</span>
+      </div>
+      <div class="result-stat">
+        <span class="result-stat-val w" id="rs-err">0</span>
+        <span class="result-stat-label">ошибок</span>
+      </div>
+      <div class="result-stat">
+        <span class="result-stat-val s" id="rs-pct">0%</span>
+        <span class="result-stat-label">результат</span>
+      </div>
+    </div>
+    <button class="restart-btn" onclick="restart()">↺ &nbsp;Пройти заново</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    topic: "История SQL",
+    q: "Какой стандарт SQL впервые ввёл объектное расширение и пользовательские типы данных (UDT)?",
+    opts: ["SQL/92", "SQL:1999 (SQL3)", "SQL:2003", "SQL/PSM-96"],
+    ans: 1,
+    exp: "<strong>SQL:1999 (SQL3)</strong> — ключевой стандарт, добавивший объектное расширение, пользовательские типы (UDT) и рекурсивные запросы."
+  },
+  {
+    topic: "История SQL",
+    q: "В каком году был принят стандарт SQL/PSM, добавивший хранимые процедуры?",
+    opts: ["1992", "1995", "1996", "1999"],
+    ans: 2,
+    exp: "<strong>SQL/PSM (PSM-96)</strong> был принят в 1996 году и стандартизировал хранимые процедуры и функции."
+  },
+  {
+    topic: "История SQL",
+    q: "Что добавил стандарт SQL:2003 по сравнению с SQL:1999?",
+    opts: ["Хранимые процедуры и триггеры", "OLAP и поддержку XML", "Объектное расширение и UDT", "Динамический SQL и ODBC"],
+    ans: 1,
+    exp: "<strong>SQL:2003</strong> добавил поддержку OLAP-аналитики и XML-данных."
+  },
+  {
+    topic: "История SQL",
+    q: "Что такое SQL/CLI, принятый в 1995 году?",
+    opts: ["Стандарт хранимых процедур", "Динамический SQL и интерфейс ODBC", "Поддержка XML", "Объектные типы данных"],
+    ans: 1,
+    exp: "<strong>SQL/CLI</strong> — стандарт динамического SQL и интерфейса ODBC для работы с БД из программ."
+  },
+  {
+    topic: "PSM — основы",
+    q: "Как расшифровывается аббревиатура PSM?",
+    opts: ["Procedural Stored Modules", "Persistent Stored Modules", "Primary Schema Management", "Portable SQL Methods"],
+    ans: 1,
+    exp: "<strong>PSM = Persistent Stored Modules</strong> — постоянно хранимые модули. Процедуры и функции хранятся в откомпилированном виде на сервере."
+  },
+  {
+    topic: "PSM — основы",
+    q: "Где хранятся и исполняются хранимые процедуры?",
+    opts: ["На клиенте в оперативной памяти", "На клиенте на диске", "На сервере в откомпилированном виде", "В отдельном файле на сервере"],
+    ans: 2,
+    exp: "Хранимые процедуры хранятся в <strong>откомпилированном виде</strong> и исполняются <strong>на сервере</strong>, что снижает нагрузку на сеть."
+  },
+  {
+    topic: "PSM — основы",
+    q: "Какие DDL-команды применяются к хранимым процедурам как объектам схемы БД?",
+    opts: ["INSERT / UPDATE / DELETE", "CREATE / ALTER / DROP", "OPEN / FETCH / CLOSE", "CALL / EXECUTE / RETURN"],
+    ans: 1,
+    exp: "Хранимые процедуры — <strong>объекты схемы БД</strong>, к ним применяются <code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>."
+  },
+  {
+    topic: "PSM — параметры",
+    q: "Какой режим параметра передаёт значение только ВНУТРЬ процедуры/функции?",
+    opts: ["OUT", "INOUT", "IN", "RETURN"],
+    ans: 2,
+    exp: "<strong>IN</strong> — входной параметр (по умолчанию). Передаёт значение внутрь, изменения внутри не видны снаружи."
+  },
+  {
+    topic: "PSM — параметры",
+    q: "Какие режимы параметров ЗАПРЕЩЕНЫ для функций (но разрешены для процедур)?",
+    opts: ["Только IN", "Только OUT", "OUT и INOUT", "Все режимы разрешены"],
+    ans: 2,
+    exp: "<strong>OUT</strong> и <strong>INOUT</strong> запрещены для функций. Функция возвращает значение только через <code>RETURNS</code>."
+  },
+  {
+    topic: "PSM — параметры",
+    q: "Процедура объявлена: <code>CREATE PROCEDURE p(IN a INT, OUT b INT, INOUT c INT)</code>. Сколько параметров она получает из вызывающего кода?",
+    opts: ["1 (только IN)", "2 (IN и INOUT)", "3 (все)", "0"],
+    ans: 2,
+    exp: "Все три параметра передаются при вызове. <strong>IN</strong> — только читается, <strong>OUT</strong> — только записывается, <strong>INOUT</strong> — читается и записывается."
+  },
+  {
+    topic: "PSM — вызов",
+    q: "Каким оператором вызывается хранимая процедура?",
+    opts: ["SELECT", "CALL / EXECUTE", "RUN", "INVOKE"],
+    ans: 1,
+    exp: "Процедура вызывается через <code>CALL имя(аргументы);</code> или <code>EXECUTE имя(аргументы);</code> как самостоятельная команда."
+  },
+  {
+    topic: "PSM — вызов",
+    q: "Где в SQL-запросе используется вызов функции?",
+    opts: ["Только в отдельной команде CALL", "Как часть выражения (в SELECT, WHERE, FROM и т.д.)", "Только в блоке BEGIN...END", "Только в триггере"],
+    ans: 1,
+    exp: "Функция вызывается <strong>как часть выражения</strong>: <code>SELECT f(x) FROM t</code>, <code>WHERE col IN f(col2)</code> и т.д."
+  },
+  {
+    topic: "Типы функций",
+    q: "Функция возвращает одно значение типа INTEGER. Какой это тип функции?",
+    opts: ["Табличная", "Агрегатная", "Скалярная", "Встроенная (inline)"],
+    ans: 2,
+    exp: "<strong>Скалярная функция</strong> возвращает одно значение. Пример: <code>CREATE FUNCTION add(x int, y int) RETURNS int AS $$ SELECT x+y; $$ LANGUAGE SQL;</code>"
+  },
+  {
+    topic: "Типы функций",
+    q: "Что такое встроенная (inline) табличная функция?",
+    opts: ["Функция без параметров", "Функция, содержащая ровно один SELECT-запрос, подставляемый на место вызова", "Агрегатная функция с одним шагом", "Функция с телом из нескольких операторов"],
+    ans: 1,
+    exp: "<strong>Inline-функция</strong> содержит один SELECT и работает как параметризованное представление — запрос подставляется на место вызова."
+  },
+  {
+    topic: "Типы функций",
+    q: "Из каких трёх внутренних компонентов состоит агрегатная функция?",
+    opts: ["Объявление, тело, возврат", "Инициализация, итерация, итоговое вычисление", "Курсор, цикл, результат", "Параметр, обработка, вывод"],
+    ans: 1,
+    exp: "<strong>Агрегатная функция</strong> состоит из: функции <em>инициализации</em> (начальное состояние), функции <em>итерации</em> (шаг по каждому значению) и функции <em>итогового вычисления</em>."
+  },
+  {
+    topic: "Операторы PSM",
+    q: "Как в PSM объявить локальную переменную?",
+    opts: ["VAR count INTEGER;", "DECLARE count INTEGER;", "LOCAL count INTEGER;", "LET count INTEGER;"],
+    ans: 1,
+    exp: "<code>DECLARE имя тип;</code> — стандартный оператор объявления локальной переменной в PSM."
+  },
+  {
+    topic: "Операторы PSM",
+    q: "Как в PSM присвоить значение переменной?",
+    opts: ["count = 0;", "count := 0;", "SET count = 0;", "ASSIGN count = 0;"],
+    ans: 2,
+    exp: "<code>SET переменная = выражение;</code> — оператор присваивания в стандарте PSM."
+  },
+  {
+    topic: "Операторы PSM",
+    q: "Какой оператор возвращает значение из функции PSM?",
+    opts: ["SEND выражение;", "OUTPUT выражение;", "RETURN выражение;", "YIELD выражение;"],
+    ans: 2,
+    exp: "<code>RETURN выражение;</code> — оператор возврата значения из функции в PSM."
+  },
+  {
+    topic: "Циклы PSM",
+    q: "Какой цикл PSM проверяет условие ДО выполнения тела?",
+    opts: ["REPEAT...UNTIL", "LOOP...END LOOP", "WHILE...DO", "FOR...DO"],
+    ans: 2,
+    exp: "<code>WHILE условие DO ... END WHILE;</code> — цикл с предусловием. Тело выполняется только если условие истинно."
+  },
+  {
+    topic: "Циклы PSM",
+    q: "Какой цикл PSM проверяет условие ПОСЛЕ выполнения тела?",
+    opts: ["WHILE...DO", "FOR...DO", "LOOP...END LOOP", "REPEAT...UNTIL"],
+    ans: 3,
+    exp: "<code>REPEAT ... UNTIL условие END REPEAT;</code> — цикл с постусловием. Тело выполняется хотя бы один раз."
+  },
+  {
+    topic: "Циклы PSM",
+    q: "Каким оператором выходят из именованного цикла LOOP?",
+    opts: ["BREAK метка;", "EXIT метка;", "LEAVE метка;", "STOP метка;"],
+    ans: 2,
+    exp: "<code>LEAVE метка;</code> — выход из именованного цикла или блока в PSM. В PostgreSQL аналогично используется <code>EXIT WHEN условие;</code>"
+  },
+  {
+    topic: "Курсоры",
+    q: "Какой правильный порядок работы с курсором?",
+    opts: [
+      "OPEN → DECLARE → FETCH → CLOSE",
+      "DECLARE → FETCH → OPEN → CLOSE",
+      "DECLARE → OPEN → FETCH (в цикле) → CLOSE",
+      "FETCH → DECLARE → OPEN → CLOSE"
+    ],
+    ans: 2,
+    exp: "Порядок: <strong>DECLARE</strong> (объявить) → <strong>OPEN</strong> (выполнить запрос) → <strong>FETCH</strong> в цикле (читать по строке) → <strong>CLOSE</strong>."
+  },
+  {
+    topic: "Курсоры",
+    q: "Что делает оператор FETCH?",
+    opts: ["Открывает курсор", "Объявляет курсор", "Читает одну следующую строку из курсора в переменные", "Закрывает курсор"],
+    ans: 2,
+    exp: "<code>FETCH имя INTO переменные;</code> — читает <strong>одну строку</strong> из курсора и помещает значения в указанные переменные."
+  },
+  {
+    topic: "PostgreSQL",
+    q: "Как в PostgreSQL (PL/pgSQL) объявить переменную типа строки таблицы <code>foo</code>?",
+    opts: ["r TABLE foo;", "r foo%TYPE;", "r foo%ROWTYPE;", "r ROWTYPE OF foo;"],
+    ans: 2,
+    exp: "<code>имя table%ROWTYPE;</code> — объявление переменной типа строки указанной таблицы в PostgreSQL PL/pgSQL."
+  },
+  {
+    topic: "PostgreSQL",
+    q: "Как перехватить ЛЮБОЕ исключение в блоке PL/pgSQL?",
+    opts: ["CATCH WHEN ALL THEN", "ON ERROR THEN", "EXCEPTION WHEN OTHERS THEN", "HANDLE ANY EXCEPTION"],
+    ans: 2,
+    exp: "<code>EXCEPTION WHEN OTHERS THEN ...</code> — перехват любого исключения в PostgreSQL PL/pgSQL."
+  },
+  {
+    topic: "PostgreSQL",
+    q: "Каким оператором PostgreSQL выполняет динамический SQL?",
+    opts: ["DYNAMIC SQL", "PERFORM", "EXECUTE строка [INTO ...] [USING ...]", "RUN строка"],
+    ans: 2,
+    exp: "<code>EXECUTE строка [INTO target] [USING expressions];</code> — выполнение динамически формируемого SQL-запроса в PostgreSQL."
+  },
+  {
+    topic: "PostgreSQL",
+    q: "Что делает <code>RETURN NEXT r;</code> в табличной функции PostgreSQL?",
+    opts: ["Завершает функцию немедленно", "Добавляет строку r в результат и продолжает выполнение", "Открывает курсор", "Объявляет следующую переменную"],
+    ans: 1,
+    exp: "<code>RETURN NEXT r;</code> добавляет строку в результирующий набор и <strong>продолжает выполнение</strong> функции (в отличие от просто RETURN, который завершает)."
+  },
+  {
+    topic: "PostgreSQL",
+    q: "Где в запросе указывается табличная функция?",
+    opts: ["В части SELECT", "В части WHERE", "В части FROM", "В части HAVING"],
+    ans: 2,
+    exp: "Табличная функция указывается в части <strong>FROM</strong>: <code>SELECT * FROM get_all_foo();</code>"
+  },
+  {
+    topic: "PostgreSQL",
+    q: "Как вызвать процедуру с INOUT-параметром в PostgreSQL?",
+    codeblock: "CREATE PROCEDURE triple(INOUT x int) ...",
+    opts: [
+      "SELECT triple(myvar);",
+      "CALL triple(myvar);",
+      "EXECUTE triple(myvar);",
+      "RUN triple(myvar);"
+    ],
+    ans: 1,
+    exp: "Процедуры вызываются через <code>CALL имя(аргументы);</code>. Параметр <code>INOUT</code> передаётся и возвращается обратно."
+  },
+  {
+    topic: "Представления",
+    q: "Что такое представление (VIEW)?",
+    opts: [
+      "Физическая копия таблицы, обновляемая по расписанию",
+      "Виртуальная таблица — хранит откомпилированный запрос, данных не содержит",
+      "Временная таблица сессии",
+      "Индексированный снимок таблицы"
+    ],
+    ans: 1,
+    exp: "<strong>VIEW</strong> — виртуальная таблица. Данных не хранит. При обращении выполняется соответствующий SELECT-запрос."
+  },
+  {
+    topic: "Представления",
+    q: "Что происходит при обращении к представлению?",
+    opts: [
+      "Возвращаются закэшированные данные",
+      "Создаётся временная таблица",
+      "Выполняется SELECT-запрос, на котором основано представление",
+      "Вызывается триггер INSTEAD OF"
+    ],
+    ans: 2,
+    exp: "При обращении к VIEW СУБД <strong>выполняет SELECT-запрос</strong>, на котором оно основано, и возвращает результат."
+  },
+  {
+    topic: "Представления",
+    q: "Можно ли назначить индекс или триггер на представление?",
+    opts: ["Нет, никогда", "Только индекс, но не триггер", "Только триггер, но не индекс", "Да, можно и индексы, и триггеры"],
+    ans: 3,
+    exp: "На представление <strong>можно назначать как индексы, так и триггеры</strong>."
+  },
+  {
+    topic: "Представления",
+    q: "Какое ОБЯЗАТЕЛЬНОЕ условие обновляемого представления?",
+    opts: [
+      "Представление должно содержать GROUP BY",
+      "Представление основано на одной таблице или обновляемом представлении",
+      "Представление должно содержать все столбцы таблицы",
+      "Представление не должно иметь условия WHERE"
+    ],
+    ans: 1,
+    exp: "<strong>Обновляемое представление</strong> должно быть основано на <em>одной</em> таблице (или обновляемом представлении) и не содержать преобразований строк."
+  },
+  {
+    topic: "Представления",
+    q: "Почему представление с <code>GROUP BY</code> не является обновляемым?",
+    opts: [
+      "GROUP BY требует прав суперпользователя",
+      "GROUP BY нарушает условие обновляемости — это оператор преобразования строк",
+      "GROUP BY несовместим с синтаксисом CREATE VIEW",
+      "GROUP BY работает только с числовыми типами"
+    ],
+    ans: 1,
+    exp: "Обновляемое представление не должно содержать <strong>операторов преобразования строк</strong>: GROUP BY, агрегирования, DISTINCT, UNION и т.д."
+  },
+  {
+    topic: "Триггеры DML",
+    q: "Что делает триггер с опцией <code>INSTEAD OF</code>?",
+    opts: [
+      "Выполняется после основной операции",
+      "Выполняется до основной операции",
+      "Выполняется ВМЕСТО основной операции",
+      "Запрещает выполнение основной операции навсегда"
+    ],
+    ans: 2,
+    exp: "<strong>INSTEAD OF</strong> — триггер замещает исходную DML-операцию. Основная операция (INSERT/UPDATE/DELETE) не выполняется."
+  },
+  {
+    topic: "Триггеры DML",
+    q: "Что означает <code>FOR EACH ROW</code> в DML-триггере?",
+    opts: [
+      "Триггер срабатывает один раз для всего DML-оператора",
+      "Триггер срабатывает для каждой изменённой строки",
+      "Триггер срабатывает при каждой транзакции",
+      "Триггер срабатывает при каждом подключении"
+    ],
+    ans: 1,
+    exp: "<strong>FOR EACH ROW</strong> — триггер-уровня строки. Код выполняется <em>для каждой изменённой строки</em>. Альтернатива: FOR EACH STATEMENT — один раз на весь оператор."
+  },
+  {
+    topic: "Триггеры DML",
+    q: "Что обозначает <code>OLD ROW</code> в теле DML-триггера?",
+    opts: [
+      "Новое значение строки после изменения",
+      "Значение строки ДО выполнения DML-операции",
+      "Строку из резервной копии",
+      "Первую строку таблицы"
+    ],
+    ans: 1,
+    exp: "<strong>OLD ROW / OLD TABLE</strong> — значения строк <em>до</em> выполнения операции. <strong>NEW ROW / NEW TABLE</strong> — значения <em>после</em>."
+  },
+  {
+    topic: "Триггеры DML",
+    q: "Для каких событий может срабатывать DML-триггер?",
+    opts: ["Только UPDATE", "INSERT, UPDATE, DELETE", "SELECT, INSERT, UPDATE", "INSERT, UPDATE, DELETE, SELECT"],
+    ans: 1,
+    exp: "DML-триггеры реагируют на <strong>INSERT, UPDATE, DELETE</strong>. Событие SELECT не поддерживается как триггерное событие."
+  },
+  {
+    topic: "Триггеры DDL",
+    q: "На каком уровне работают DDL-триггеры?",
+    opts: ["На уровне строки", "На уровне столбца", "На уровне БД или сервера", "На уровне индекса"],
+    ans: 2,
+    exp: "<strong>DDL-триггеры</strong> работают на уровне <em>БД или сервера</em> и реагируют на изменения структуры объектов (CREATE, ALTER, DROP)."
+  },
+  {
+    topic: "Триггеры DDL",
+    q: "Какие системные переменные доступны в DDL-триггере PostgreSQL?",
+    opts: ["OLD и NEW", "tg_event и tg_tag", "inserted и deleted", "before и after"],
+    ans: 1,
+    exp: "В DDL-триггерах PostgreSQL доступны <code>tg_event</code> (тип события, например ddl_command_start) и <code>tg_tag</code> (тип команды, например CREATE TABLE)."
+  },
+  {
+    topic: "CTE и рекурсия",
+    q: "Что такое CTE (Common Table Expression)?",
+    opts: [
+      "Тип индекса для ускорения запросов",
+      "Именованный подзапрос, объявляемый через WITH и используемый в основном запросе",
+      "Тип хранимой процедуры без параметров",
+      "Кэш результатов запроса"
+    ],
+    ans: 1,
+    exp: "<strong>CTE</strong> объявляется через <code>WITH имя AS (SELECT ...)</code>. Вычисляется один раз и может использоваться несколько раз в запросе."
+  },
+  {
+    topic: "CTE и рекурсия",
+    q: "Из каких двух частей состоит рекурсивный запрос <code>WITH RECURSIVE</code>?",
+    opts: [
+      "Базовый SELECT и финальный SELECT",
+      "База вычислений (anchor) и индукционный шаг, объединённые через UNION",
+      "Левая рекурсия и правая рекурсия",
+      "Инициализация и завершение"
+    ],
+    ans: 1,
+    exp: "<strong>WITH RECURSIVE</strong> = <em>база</em> (начальные строки, anchor) <code>UNION</code> <em>индукция</em> (шаг расширения, ссылается на само выражение)."
+  },
+  {
+    topic: "CTE и рекурсия",
+    q: "Когда прекращается итерация в рекурсивном запросе?",
+    opts: [
+      "После фиксированного числа шагов (100 по умолчанию)",
+      "Когда достигнута фиксированная точка — индукционный шаг не добавляет новых строк",
+      "Когда заполнена временная таблица",
+      "По истечению таймаута"
+    ],
+    ans: 1,
+    exp: "Итерация останавливается при <strong>фиксированной точке</strong> — когда индукционный шаг не добавляет ни одной новой строки."
+  },
+  {
+    topic: "CTE и рекурсия",
+    q: "Что такое монотонность в контексте рекурсивных запросов?",
+    opts: [
+      "Каждая итерация уменьшает набор строк",
+      "Набор строк при итерациях только растёт, никогда не уменьшается",
+      "Запрос всегда возвращает одно и то же число строк",
+      "Рекурсия идёт только в одну сторону"
+    ],
+    ans: 1,
+    exp: "<strong>Монотонность</strong> — обязательное свойство рекурсии: набор строк при каждой итерации только <em>растёт</em>. Это гарантирует достижение фиксированной точки."
+  },
+  {
+    topic: "CTE и рекурсия",
+    q: "Что ЗАПРЕЩЕНО использовать в индукционной части рекурсивного запроса?",
+    opts: [
+      "JOIN, WHERE, ORDER BY",
+      "DISTINCT, NOT EXISTS, INTERSECT, EXCEPT",
+      "GROUP BY, SUM, COUNT",
+      "UNION, UNION ALL"
+    ],
+    ans: 1,
+    exp: "В итерационной части запрещены <strong>DISTINCT, NOT EXISTS, INTERSECT, EXCEPT</strong> — они нарушают монотонность (могут уменьшать набор строк)."
+  },
+  {
+    topic: "CTE и рекурсия",
+    q: "Какой запрос найдёт все города, достижимые из 'MOS' только НЕ авиационными маршрутами?",
+    codeblock: "WITH RECURSIVE Path AS (\n  SELECT cfrom, cto FROM Roads\n  WHERE cfrom = 'MOS' AND rtype <> 'avia'\n  UNION\n  SELECT Path.cfrom, Roads.cto\n  FROM Path, Roads\n  WHERE Path.cto = Roads.cfrom\n  AND ???\n)\nSELECT * FROM Path;",
+    opts: [
+      "AND rtype = 'avia'",
+      "AND rtype <> 'avia'",
+      "AND Roads.cfrom <> 'MOS'",
+      "AND Path.cfrom = Roads.cfrom"
+    ],
+    ans: 1,
+    exp: "Условие <code>rtype &lt;&gt; 'avia'</code> нужно в <strong>обеих частях</strong>: и в базе, и в индукционном шаге, чтобы фильтровать все шаги пути."
+  },
+  {
+    topic: "CTE и рекурсия",
+    q: "Что даёт добавление <code>Path.rnum + 1</code> в расширенный рекурсивный запрос?",
+    opts: [
+      "Ограничивает глубину рекурсии",
+      "Считает количество шагов (рёбер) в каждом пути",
+      "Суммирует стоимость маршрута",
+      "Нумерует строки результата"
+    ],
+    ans: 1,
+    exp: "<code>rnum + 1</code> на каждом шаге увеличивает счётчик. Итого <strong>rnum показывает длину пути</strong> в рёбрах (количество пересадок + 1)."
+  },
+  {
+    topic: "Оконные функции",
+    q: "Чем <code>DENSE_RANK()</code> отличается от <code>RANK()</code>?",
+    opts: [
+      "DENSE_RANK работает только с числами",
+      "DENSE_RANK не пропускает ранги при совпадающих значениях",
+      "DENSE_RANK не требует ORDER BY",
+      "Различий нет, это синонимы"
+    ],
+    ans: 1,
+    exp: "<code>RANK()</code> пропускает ранги: 1,1,3. <code>DENSE_RANK()</code> не пропускает: 1,1,2. <code>ROW_NUMBER()</code> уникален всегда: 1,2,3."
+  },
+  {
+    topic: "Оконные функции",
+    q: "Что возвращает <code>NTILE(4) OVER (ORDER BY salary)</code>?",
+    opts: [
+      "Ранг сотрудника в пределах 4-го отдела",
+      "Номер квартиля (1–4), к которому относится строка",
+      "Топ-4 записи по зарплате",
+      "Сумму зарплат в группах по 4"
+    ],
+    ans: 1,
+    exp: "<code>NTILE(n)</code> разбивает строки на <strong>n примерно равных групп</strong> и возвращает номер группы (от 1 до n) для каждой строки."
+  },
+  {
+    topic: "Оконные функции",
+    q: "Какое ключевое слово ОБЯЗАТЕЛЬНО для оконной функции?",
+    opts: ["GROUP BY", "PARTITION", "OVER", "WINDOW"],
+    ans: 2,
+    exp: "Оконные функции всегда содержат <code>OVER (...)</code>: <code>RANK() OVER (ORDER BY salary)</code>. Без OVER это обычная агрегатная функция."
+  },
+  {
+    topic: "Оконные функции",
+    q: "Для строк с одинаковым значением <code>src</code> в таблице: что вернёт <code>ROW_NUMBER()</code>?",
+    opts: [
+      "Одинаковый номер для одинаковых значений",
+      "Уникальный последовательный номер для каждой строки",
+      "NULL для дублирующихся строк",
+      "Среднее значение по группе"
+    ],
+    ans: 1,
+    exp: "<code>ROW_NUMBER()</code> всегда возвращает <strong>уникальный номер</strong>, даже для строк с одинаковыми значениями в ORDER BY."
+  },
+  {
+    topic: "Общие",
+    q: "Какое из следующих утверждений о хранимых процедурах ВЕРНО?",
+    opts: [
+      "Хранятся в исходном тексте, компилируются при каждом вызове",
+      "Исполняются на клиентской машине",
+      "Хранятся в откомпилированном виде и исполняются на сервере",
+      "Автоматически удаляются при перезапуске СУБД"
+    ],
+    ans: 2,
+    exp: "Хранимые процедуры хранятся в <strong>откомпилированном виде</strong> на сервере и там же исполняются — это снижает нагрузку на сеть и ускоряет выполнение."
+  },
+  {
+    topic: "Общие",
+    q: "Какой из этих элементов НЕ входит в список расширений SQL для ОРБД?",
+    opts: [
+      "Рекурсивные запросы (WITH RECURSIVE)",
+      "Оконные функции (RANK, DENSE_RANK)",
+      "Физические файловые операции (чтение/запись файлов ОС)",
+      "DDL/DML триггеры"
+    ],
+    ans: 2,
+    exp: "Физические файловые операции ОС — не часть стандарта SQL. Расширения ОРБД включают рекурсию, оконные функции, триггеры, хранимые процедуры, CTE, секционирование."
+  },
+  {
+    topic: "Общие",
+    q: "В чём главное отличие <code>FOR EACH STATEMENT</code> от <code>FOR EACH ROW</code> в триггере?",
+    opts: [
+      "FOR EACH STATEMENT — только для INSERT",
+      "FOR EACH STATEMENT срабатывает один раз на весь DML-оператор, независимо от числа строк",
+      "FOR EACH STATEMENT быстрее, но менее точный",
+      "FOR EACH STATEMENT не поддерживает условие WHEN"
+    ],
+    ans: 1,
+    exp: "<strong>FOR EACH STATEMENT</strong> — триггер выполняется <em>один раз</em> на весь оператор (даже если затронуто 1000 строк). <strong>FOR EACH ROW</strong> — для каждой строки."
+  }
+];
+
+// State
+let current = 0;
+let answers = new Array(questions.length).fill(null);
+let scores = { correct: 0, wrong: 0 };
+
+function renderQuestion() {
+  const q = questions[current];
+  const area = document.getElementById('quiz-area');
+
+  let cbHtml = '';
+  if (q.codeblock) {
+    cbHtml = `<div class="q-code">${escHtml(q.codeblock)}</div>`;
+  }
+
+  const letters = ['A','B','C','D'];
+  const state = answers[current];
+
+  let optsHtml = q.opts.map((o, i) => {
+    let cls = '';
+    if (state !== null) {
+      if (i === q.ans) cls = 'correct';
+      else if (i === state && state !== q.ans) cls = 'wrong';
+    }
+    return `<button class="opt${cls ? ' '+cls : ''}" ${state !== null ? 'disabled' : ''} onclick="pick(${i})">
+      <span class="opt-letter">${letters[i]}</span>
+      <span>${escHtml(o)}</span>
+    </button>`;
+  }).join('');
+
+  let expHtml = '';
+  if (state !== null) {
+    expHtml = `<div class="explanation">💡 ${q.exp}</div>`;
+  }
+
+  const prevDis = current === 0 ? 'disabled' : '';
+  const nextDis = current === questions.length - 1 ? 'disabled' : '';
+  const isLast = current === questions.length - 1;
+
+  area.innerHTML = `
+    <div class="q-card">
+      <div class="q-num">
+        <span class="q-num-badge">${current + 1}</span>
+        Вопрос ${current + 1} из ${questions.length}
+        &nbsp;·&nbsp; <span style="color:var(--accent2)">${q.topic}</span>
+      </div>
+      <div class="q-text">${q.q}</div>
+      ${cbHtml}
+      <div class="options">${optsHtml}</div>
+      ${expHtml}
+      <div class="nav">
+        <button class="nav-btn" onclick="go(-1)" ${prevDis}>← Назад</button>
+        ${isLast && state !== null
+          ? `<button class="nav-btn primary" onclick="showResult()">Завершить тест →</button>`
+          : `<button class="nav-btn${state !== null ? ' primary' : ''}" onclick="go(1)" ${nextDis}>Вперёд →</button>`
+        }
+      </div>
+    </div>
+  `;
+
+  updateStats();
+  updateProgress();
+  updateDots();
+  document.getElementById('prog-topic').textContent = q.topic;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function pick(i) {
+  if (answers[current] !== null) return;
+  answers[current] = i;
+  if (i === questions[current].ans) scores.correct++;
+  else scores.wrong++;
+  renderQuestion();
+}
+
+function go(d) {
+  current = Math.max(0, Math.min(questions.length - 1, current + d));
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateStats() {
+  const answered = answers.filter(a => a !== null).length;
+  document.getElementById('stat-cur').textContent = current + 1;
+  document.getElementById('stat-ok').textContent = scores.correct;
+  document.getElementById('stat-err').textContent = scores.wrong;
+  const pct = answered > 0 ? Math.round(scores.correct / answered * 100) : 0;
+  document.getElementById('stat-pct').textContent = pct + '%';
+}
+
+function updateProgress() {
+  const answered = answers.filter(a => a !== null).length;
+  const pct = answered / questions.length * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('prog-label').textContent = `${answered} / ${questions.length}`;
+}
+
+function updateDots() {
+  const container = document.getElementById('dots');
+  container.innerHTML = questions.map((q, i) => {
+    let cls = 'dot';
+    if (i === current) cls += ' current';
+    else if (answers[i] !== null) {
+      cls += answers[i] === q.ans ? ' answered-correct' : ' answered-wrong';
+    }
+    return `<div class="${cls}" onclick="jumpTo(${i})" title="Вопрос ${i+1}: ${q.topic}">${i+1}</div>`;
+  }).join('');
+}
+
+function jumpTo(i) {
+  current = i;
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showResult() {
+  document.getElementById('quiz-area').style.display = 'none';
+  document.getElementById('dots-wrap').style.display = 'none';
+
+  const total = questions.length;
+  const pct = Math.round(scores.correct / total * 100);
+
+  let title, msg;
+  if (pct >= 90) { title = 'Отлично!'; msg = 'Превосходный результат. Материал освоен на высоком уровне — можно смело идти на защиту контрольных.'; }
+  else if (pct >= 75) { title = 'Хорошо!'; msg = 'Хороший результат. Несколько тем стоит повторить, но основы усвоены уверенно.'; }
+  else if (pct >= 55) { title = 'Неплохо'; msg = 'Базовые концепции понятны, но есть пробелы. Рекомендуем перечитать разделы с ошибками.'; }
+  else { title = 'Нужно повторить'; msg = 'Рекомендуем внимательно перечитать конспект лекции и пройти тест заново.'; }
+
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('result-num').textContent = scores.correct;
+  document.getElementById('result-pct').textContent = 'из ' + total;
+  document.getElementById('rs-ok').textContent = scores.correct;
+  document.getElementById('rs-err').textContent = scores.wrong;
+  document.getElementById('rs-pct').textContent = pct + '%';
+
+  const rs = document.getElementById('result-screen');
+  rs.classList.add('show');
+
+  // Ring color
+  const ringEl = document.getElementById('ring-fill');
+  const color = pct >= 75 ? '#34d399' : pct >= 55 ? '#f59e0b' : '#f87171';
+  ringEl.style.stroke = color;
+
+  // Animate ring
+  const circumference = 2 * Math.PI * 80;
+  const offset = circumference * (1 - pct / 100);
+  setTimeout(() => { ringEl.style.strokeDashoffset = offset; }, 100);
+
+  // Result number color
+  document.getElementById('result-num').style.color = color;
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function restart() {
+  current = 0;
+  answers = new Array(questions.length).fill(null);
+  scores = { correct: 0, wrong: 0 };
+
+  document.getElementById('result-screen').classList.remove('show');
+  document.getElementById('quiz-area').style.display = '';
+  document.getElementById('dots-wrap').style.display = '';
+
+  // Reset ring
+  document.getElementById('ring-fill').style.strokeDashoffset = 502;
+
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Init
+renderQuestion();
+</script>
+</body>
+</html>
